@@ -1,0 +1,156 @@
+/* Login page wrapper - centers the form */
+.login-page {
+    background: linear-gradient(to bottom right, #eff6ff, #ffffff);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wrapper {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    color: #1f2937;
+    border-radius: 24px;
+    padding: 48px 40px;
+    box-shadow: 0 20px 60px rgba(37, 99, 235, 0.15);
+    margin: 20px;
+    border: 2px solid #dbeafe;
+}
+
+.wrapper h1 {
+    font-size: 42px;
+    text-align: center;
+    color: #2563eb;
+    margin-bottom: 40px;
+    font-weight: 800;
+}
+
+.wrapper .input-box {
+    position: relative;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.input-box input {
+    width: 100%;
+    height: 56px;
+    background: #ffffff;
+    border: 2px solid #dbeafe;
+    outline: none;
+    border-radius: 16px;
+    font-size: 16px;
+    color: #1f2937;
+    padding: 0 56px 0 20px;
+    transition: all 0.3s ease;
+}
+
+.input-box input:focus {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-box input::placeholder {
+    color: #9ca3af;
+}
+
+.input-box .icon {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #2563eb;
+    font-size: 18px;
+}
+
+.wrapper .remember-forgot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.remember-forgot label {
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.remember-forgot label input {
+    accent-color: #2563eb;
+    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.remember-forgot a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s;
+}
+
+.remember-forgot a:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.wrapper button {
+    width: 100%;
+    height: 56px;
+    background: #2563eb;
+    border: none;
+    outline: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+    cursor: pointer;
+    font-size: 17px;
+    color: #ffffff;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wrapper button:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4);
+}
+
+.wrapper button:active {
+    transform: translateY(0);
+}
+
+.wrapper .register-link,
+.wrapper .login-link {
+    font-size: 15px;
+    text-align: center;
+    margin-top: 32px;
+}
+
+.register-link p,
+.login-link p {
+    color: #4b5563;
+    font-weight: 500;
+}
+
+.register-link p a,
+.login-link p a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 700;
+    transition: color 0.3s;
+}
+
+.register-link p a:hover,
+.login-link p a:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
