@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import RoomyLanding from './LandingPage/RoomyLanding';
 import Login from './Login/Login';
 import Dashboard from './Dashboard/Dashboard';
-import SignUp from './SignUp/Signup';
+import SignUp from './SignUp/SignUp';
 import Apartments from './Apartments/Apartments';
 import Chores from './Chores/Chores';
 import Payments from './Payments/Payments';
