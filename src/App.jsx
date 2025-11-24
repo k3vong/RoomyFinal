@@ -8,7 +8,8 @@ import Apartments from './Apartments/Apartments';
 import Chores from './Chores/Chores';
 import Payments from './Payments/Payments';
 import Roommates from './Roommates/Roommates';
-// import Search from './Search'; // example destination after login
+import ForgotPassword from './Login/ForgotPassword/ForgotPassword';
+import EmailSent from './Login/EmailSent/EmailSent';
 
 function App() {
   return (
@@ -16,13 +17,14 @@ function App() {
       <Routes>
         <Route path="/" element={<RoomyLanding />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/search" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/register" element={<SignUp />} />
         <Route path="/apartments" element={<Apartments />} />
         <Route path="/chores" element={<Chores />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/roommates" element={<Roommates />} />
-        {/* <Route path="/search" element={<Search />} /> */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/emailsent" element={<EmailSent />} />
       </Routes>
     </Router>
   );
