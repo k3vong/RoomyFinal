@@ -13,14 +13,15 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      fetchUserApartment();
+    if (!user) {
+      navigate('/login');
+      return;
     }
+    fetchUserApartment();
   }, []);
 
   const fetchUserApartment = async () => {
     try {
-      // Get user's apartment
       const aptResponse = await axios.get(
         `http://localhost:8080/api/residence/user/${user.userId}`
       );
@@ -28,12 +29,13 @@ export default function Dashboard() {
       
       if (apartmentId) {
         setUserApartmentId(apartmentId);
-        // Get apartment details
+
         const detailsResponse = await axios.get(
           `http://localhost:8080/api/apartments/${apartmentId}`
         );
         setApartment(detailsResponse.data);
       }
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching apartment:', error);
@@ -43,49 +45,41 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/');
+    navigate('/login');
   };
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="dashboard-container">
       <nav className="dashboard-nav">
         <div className="logo">Roomy</div>
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
-        </button>
+        <button className="logout-btn" onClick={handleLogout}>Logout</button>
       </nav>
-      
+
       <div className="dashboard-content">
-        <h1>Welcome, {user.firstName}! 👋</h1>
+        <h1>Welcome, {user.firstName} {user.lastName}! 👋</h1>
+
         <div className="user-info">
           <p><strong>Username:</strong> {user.username}</p>
           <p><strong>Email:</strong> {user.email}</p>
+          <p><strong>Status:</strong> {user.status || 'N/A'}</p>
+          {user.customStatus && <p><strong>Custom Status:</strong> {user.customStatus}</p>}
         </div>
-        
+
         <div className="dashboard-main">
           {loading ? (
             <p>Loading...</p>
           ) : !userApartmentId ? (
             <div className="no-apartment-message">
               <h2>You haven't joined an apartment yet</h2>
-              <button 
-                className="primary-btn"
-                onClick={() => navigate('/apartments')}
-              >
+              <button className="primary-btn" onClick={() => navigate('/apartments')}>
                 Find or Create an Apartment
               </button>
             </div>
           ) : (
             <div className="apartment-main-card">
-              <div 
-                className="apartment-header"
-                onClick={() => setShowOptions(!showOptions)}
-              >
+              <div className="apartment-header" onClick={() => setShowOptions(!showOptions)}>
                 <div className="apartment-info">
                   <h2>🏠 My Apartment</h2>
                   {apartment && (
@@ -95,9 +89,7 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-                <button className="expand-btn">
-                  {showOptions ? '▼' : '▶'}
-                </button>
+                <button className="expand-btn">{showOptions ? '▼' : '▶'}</button>
               </div>
 
               {showOptions && (
@@ -134,3 +126,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+
