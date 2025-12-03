@@ -758,25 +758,22 @@ open_in_browser() {
     echo ""
     echo "    [1] 🎨 Frontend (http://localhost:5173)"
     echo "    [2] ⚙️  Backend API (http://localhost:8080)"
-            10)
-                reset_database
-                ;;
-            11)
-                run_migration
-                ;;
-            12)
-                show_status
-                ;;
-            13)
-                show_docs
-                ;;
-            14)
-                check_requirements
-                ;;
-            15)
-                open_in_browser
-                ;;
-            0)en_url "http://localhost:8080/swagger-ui.html"
+    echo "    [3] 📚 Backend Swagger Docs (http://localhost:8080/swagger-ui.html)"
+    echo "    [4] Back to Main Menu"
+    echo ""
+    read -p "  Select option: " urlchoice
+    
+    case $urlchoice in
+        1)
+            open_url "http://localhost:5173"
+            print_success "Opening frontend..."
+            ;;
+        2)
+            open_url "http://localhost:8080"
+            print_success "Opening backend API..."
+            ;;
+        3)
+            open_url "http://localhost:8080/swagger-ui.html"
             print_success "Opening Swagger docs..."
             ;;
         4)
