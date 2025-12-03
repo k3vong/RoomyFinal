@@ -1,0 +1,47 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: roomy-postgres
+    environment:
+      POSTGRES_DB: roomy_db
+      POSTGRES_USER: roomy_user
+      POSTGRES_PASSWORD: roomy_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - roomy-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roomy_user -d roomy_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: roomy-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/roomy_db
+      SPRING_DATASOURCE_USERNAME: roomy_user
+      SPRING_DATASOURCE_PASSWORD: roomy_password
+    ports:
+      - "8080:8080"
+    networks:
+      - roomy-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+
+networks:
+  roomy-network:
+    driver: bridge

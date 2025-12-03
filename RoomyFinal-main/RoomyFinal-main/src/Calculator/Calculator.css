@@ -1,0 +1,121 @@
+.calculator-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xl) 0;
+}
+
+.calculator-card {
+  max-width: 400px;
+  width: 100%;
+  padding: var(--spacing-xl);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: var(--shadow-lg);
+}
+
+.calculator-display {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.display-value {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: white;
+  word-break: break-all;
+  text-align: right;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+}
+
+.calculator-keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+}
+
+.calculator-keypad button {
+  height: 64px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calculator-keypad button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.calculator-keypad button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.key-number {
+  background: white;
+  color: var(--color-text);
+}
+
+.key-number:hover {
+  background: var(--color-bg-subtle);
+}
+
+.key-function {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-text);
+}
+
+.key-function:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+.key-operator {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.key-operator:hover {
+  background: linear-gradient(135deg, #5568d3, #6a3f8f);
+}
+
+.key-equals {
+  background: var(--color-success);
+  color: white;
+}
+
+.key-equals:hover {
+  background: var(--color-success-dark);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .calculator-card {
+    padding: var(--spacing-lg);
+  }
+
+  .calculator-display {
+    padding: var(--spacing-xl);
+    min-height: 60px;
+  }
+
+  .display-value {
+    font-size: var(--font-size-3xl);
+  }
+
+  .calculator-keypad button {
+    height: 56px;
+    font-size: var(--font-size-lg);
+  }
+
+  .calculator-keypad {
+    gap: var(--spacing-sm);
+  }
+}

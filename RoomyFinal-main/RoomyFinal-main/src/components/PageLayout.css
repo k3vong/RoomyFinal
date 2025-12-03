@@ -1,0 +1,106 @@
+/* PageLayout Component Styles */
+
+.page-layout {
+  min-height: calc(100vh - var(--nav-height));
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  margin: 0 auto;
+}
+
+.page-layout-sm {
+  max-width: var(--max-width-sm);
+}
+
+.page-layout-md {
+  max-width: var(--max-width-md);
+}
+
+.page-layout-lg {
+  max-width: var(--max-width-lg);
+}
+
+.page-layout-xl {
+  max-width: var(--max-width-xl);
+}
+
+.page-layout-2xl {
+  max-width: var(--max-width-2xl);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.page-header-content {
+  flex: 1;
+}
+
+.page-title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+  line-height: var(--line-height-tight);
+}
+
+.page-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-normal);
+}
+
+.page-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .page-layout {
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .page-title {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .page-subtitle {
+    font-size: var(--font-size-base);
+  }
+  
+  .page-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .page-actions > * {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-layout {
+    padding: var(--spacing-lg);
+  }
+  
+  .page-title {
+    font-size: var(--font-size-2xl);
+  }
+}

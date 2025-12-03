@@ -1,0 +1,223 @@
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-4xl) var(--spacing-xl);
+  color: var(--color-text-light);
+}
+
+.empty-state-card {
+  text-align: center;
+  padding: var(--spacing-4xl) var(--spacing-xl);
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.empty-state-icon {
+  font-size: var(--font-size-4xl);
+  line-height: 1;
+}
+
+.empty-state-content h2,
+.empty-state-content h3 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.empty-state-content p {
+  margin: 0;
+  color: var(--color-text-light);
+}
+
+.roommates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.roommate-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+}
+
+.roommate-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent-purple));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-md);
+}
+
+.roommate-info {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.roommate-info h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.you-badge {
+  display: inline-block;
+  padding: 2px var(--spacing-sm);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent-purple));
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.roommate-username {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.roommate-email {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  word-break: break-word;
+}
+
+.roommate-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-available {
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.status-away {
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+
+.status-busy {
+  background: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+
+.status-offline {
+  background: var(--color-border);
+  color: var(--color-text-light);
+}
+
+.custom-status-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  font-style: italic;
+}
+
+.roommate-joined {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-lighter);
+}
+
+.info-card {
+  background: linear-gradient(135deg, var(--color-bg-subtle), var(--color-bg));
+  border: 2px dashed var(--color-border);
+  text-align: center;
+}
+
+.info-card h3 {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
+}
+
+.info-card p {
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-text-light);
+}
+
+.apartment-id-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-md);
+}
+
+.apartment-id-display code {
+  padding: 4px var(--spacing-sm);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-family: 'Courier New', monospace;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .roommates-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .roommate-avatar {
+    width: 64px;
+    height: 64px;
+    font-size: var(--font-size-xl);
+  }
+
+  .roommate-info h3 {
+    font-size: var(--font-size-lg);
+  }
+}
