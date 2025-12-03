@@ -8,6 +8,7 @@ public class Apartment {
     private String roomNumber;
     private BigDecimal rentAmount;
     private int rentDueDay;
+    private String paymentType;
     private Integer createdBy;
 
     public Apartment() {}
@@ -69,6 +70,14 @@ public class Apartment {
         this.rentDueDay = rentDueDay;
     }
 
+    public String getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
+    }
+
     public Integer getCreatedBy() {
         return createdBy;
     }
@@ -85,6 +94,7 @@ public class Apartment {
                 ", roomNumber='" + roomNumber + '\'' +
                 ", rentAmount=" + rentAmount +
                 ", rentDueDay=" + rentDueDay +
+                ", paymentType='" + paymentType + '\'' +
                 ", createdBy=" + createdBy +
                 '}';
     }

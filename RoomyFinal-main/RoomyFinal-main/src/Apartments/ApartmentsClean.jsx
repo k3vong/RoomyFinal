@@ -21,6 +21,7 @@ export default function Apartments() {
   const [userApartmentId, setUserApartmentId] = useState(null);
   const [apartmentIdInput, setApartmentIdInput] = useState('');
   const [joiningWithId, setJoiningWithId] = useState(false);
+  const [roommatesCount, setRoommatesCount] = useState({});
   const [formData, setFormData] = useState({
     complexName: '',
     roomNumber: '',
@@ -43,7 +44,22 @@ export default function Apartments() {
   const fetchData = async () => {
     try {
       const apartmentsResponse = await axios.get('http://localhost:8080/api/apartments');
-      setApartments(apartmentsResponse.data || []);
+      const apartmentsData = apartmentsResponse.data || [];
+      setApartments(apartmentsData);
+
+      // Fetch roommate counts for all apartments
+      const counts = {};
+      for (const apt of apartmentsData) {
+        try {
+          const residentsResponse = await axios.get(
+            `http://localhost:8080/api/residence/apartment/${apt.apartmentId}`
+          );
+          counts[apt.apartmentId] = residentsResponse.data.length;
+        } catch (err) {
+          counts[apt.apartmentId] = 0;
+        }
+      }
+      setRoommatesCount(counts);
 
       if (user?.userId) {
         try {
@@ -98,10 +114,18 @@ export default function Apartments() {
         );
         showToast('Apartment updated successfully!');
       } else {
-        await axios.post('http://localhost:8080/api/apartments', {
+        // Create apartment
+        const createResponse = await axios.post('http://localhost:8080/api/apartments', {
           ...apartmentData,
           createdBy: user.userId
         });
+        const newApartmentId = createResponse.data;
+        
+        // Automatically join the creator to the apartment
+        await axios.post(
+          `http://localhost:8080/api/residence/join?userId=${user.userId}&apartmentId=${newApartmentId}`
+        );
+        
         showToast('Apartment created successfully!');
       }
       
@@ -423,6 +447,7 @@ export default function Apartments() {
                       {apt.roomNumber && <p>📍 Room {apt.roomNumber}</p>}
                       <p>💰 ${apt.rentAmount?.toFixed(2) || '0.00'}/month</p>
                       <p>📅 Due day {apt.rentDueDay || 1}</p>
+                      <p>👥 {roommatesCount[apt.apartmentId] || 0} {(roommatesCount[apt.apartmentId] || 0) === 1 ? 'roommate' : 'roommates'}</p>
                     </div>
                     
                     <div className="apartment-actions">

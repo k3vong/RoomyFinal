@@ -1,0 +1,502 @@
+Roomy - Web Application 
+
+PROJECT OVERVIEW
+--------------------------------------------------------------------------------
+
+Roomy is a modern, full-stack web application designed to simplify shared 
+living arrangements by providing comprehensive tools for roommate coordination, 
+financial management, and household task organization. The platform enables 
+users to create or join apartments, manage rent payments through flexible 
+payment models, coordinate household chores, maintain shared grocery lists, 
+and communicate availability status with co-habitants.
+
+
+CORE FEATURES
+--------------------------------------------------------------------------------
+
+1. User Management
+   - Secure user registration and authentication
+   - Personalized user profiles with customizable status messages
+   - Status indicators (Available, Busy, Working, Cleaning, Away, Custom)
+   - Biography and contact information management
+
+2. Apartment Management
+   - Create and configure shared living spaces
+   - Invite roommates via apartment ID system
+   - Track apartment details (complex name, room number, rent information)
+   - Automatic creator-to-apartment association
+   - Multi-roommate support with residence tracking
+
+3. Payment Management
+   - Two payment models:
+     * Split Payment: Divides rent equally among all roommates
+     * Queue Payment: Rotates payment responsibility monthly
+   - Configurable rent amounts and due dates
+   - Payment queue system with automatic rotation
+   - Persistent payment configuration
+   - Fallback logic for single-occupant apartments
+
+4. Chore Tracking
+   - Create and assign household tasks
+   - Support for one-time and recurring chores (daily, weekly, monthly)
+   - Chore completion tracking with timestamps
+   - Assignment management system
+   - Due date scheduling and monitoring
+
+5. Grocery Management
+   - Shared shopping lists per apartment
+   - Category-based organization (Dairy, Produce, Meat, Grains, Snacks, 
+     Beverages, Frozen, Bakery, Other)
+   - Purchase status tracking
+   - Quantity specification
+   - Contributor tracking (who added each item)
+
+6. Roommate Directory
+   - View all current roommates in shared apartment
+   - Real-time status visibility
+   - User profile access
+   - Apartment membership management
+
+7. Dashboard
+   - Centralized overview of apartment information
+   - Quick access to upcoming payment obligations
+   - Chore status summaries
+   - Status update functionality
+   - Navigation hub to all features
+
+8. Expense Calculator
+   - Built-in calculator for cost splitting
+   - Modern gradient-based design
+   - Supports standard mathematical operations
+
+
+TECHNICAL ARCHITECTURE
+--------------------------------------------------------------------------------
+
+Backend Stack
+-------------
+- Framework: Spring Boot 3.5.7
+- Language: Java 21
+- Database: PostgreSQL 15
+- ORM: Spring Data JDBC
+- Build Tool: Maven 3.9
+- Containerization: Docker with multi-stage builds
+- API Architecture: RESTful design with JSON data exchange
+
+Backend Components:
+- Controllers: 8 REST controllers for API endpoints
+  * UserController
+  * ApartmentController
+  * ResidenceController
+  * ChoreController
+  * GroceryController
+  * RentPaymentController
+  * PaymentQueueController
+  * CalculatorController
+
+- Models: 9 domain entities
+  * User
+  * Apartment
+  * Residence
+  * Chore
+  * Grocery
+  * RentPayment
+  * PaymentQueue
+  * StatusUpdateRequest
+  * CalculationRequest
+
+- Repositories: 7 data access layers
+  * UserRepository
+  * ApartmentRepository
+  * ResidenceRepository
+  * ChoreRepository
+  * GroceryRepository
+  * RentPaymentRepository
+  * PaymentQueueRepository
+
+- Services: CalculatorService for expense calculations
+
+Frontend Stack
+--------------
+- Framework: React 19.1.1
+- Build Tool: Vite 7.1.7
+- Routing: React Router 7.9.4
+- HTTP Client: Axios 1.13.1
+- Icons: React Icons 5.5.0
+- Language: JavaScript (ES6+)
+
+Frontend Structure:
+- Page Components: 13 feature pages
+  * Landing Page
+  * Login / Sign Up
+  * Dashboard
+  * Apartments
+  * Payments
+  * Chores
+  * Groceries
+  * Roommates
+  * Profile
+  * Calculator
+  * Password Recovery
+
+- Reusable Components: 6 core UI components
+  * Button (7 variants: primary, secondary, danger, success, ghost, link, icon)
+  * Card (with optional header, footer, hover effects)
+  * Input / Textarea / Select (form controls with validation states)
+  * Navigation (responsive sidebar with active state management)
+  * PageLayout (consistent page structure wrapper)
+  * Toast (notification system with auto-dismiss)
+
+- Design System:
+  * 50+ CSS custom properties for consistent theming
+  * Responsive breakpoints for mobile, tablet, desktop
+  * WCAG 2.1 AA accessibility compliance
+  * Modern gradient-based visual design
+  * Clean, professional aesthetic inspired by Linear and Notion
+
+
+DATABASE SCHEMA
+--------------------------------------------------------------------------------
+
+Core Tables:
+- users: User account information and status
+- apartments: Shared living space details and rent configuration
+- residence: Many-to-many relationship between users and apartments
+- chores: Task definitions and recurrence settings
+- chore_assignments: Links chores to assigned users
+- groceries: Shopping list items with category and purchase status
+- rent_payments: Payment records with type and completion status
+- payment_queue: Rotation order for queue-based payment system
+
+Key Relationships:
+- Users can belong to multiple apartments (via residence table)
+- Apartments have one creator but multiple members
+- Chores are apartment-specific with user assignments
+- Groceries are tied to specific apartments
+- Payment queue maintains rotation order per apartment
+
+Database Functions:
+- calculate_split_rent(): Divides rent equally among apartment members
+- get_next_queue_payer(): Calculates next payer in rotation sequence
+
+Views:
+- rent_summary: Aggregated payment information across apartments
+
+
+API ENDPOINTS
+--------------------------------------------------------------------------------
+
+User Management:
+- GET    /api/users                  - Retrieve all users
+- POST   /api/signup                 - Create new user account
+- POST   /api/login                  - Authenticate user
+- PUT    /api/users/{userId}         - Update user profile
+- PUT    /api/users/{userId}/status  - Update availability status
+
+Apartment Management:
+- GET    /api/apartments             - List all apartments
+- POST   /api/apartments             - Create new apartment
+- GET    /api/apartments/{id}        - Retrieve specific apartment
+- PUT    /api/apartments/{id}        - Update apartment details
+- DELETE /api/apartments/{id}        - Remove apartment
+- GET    /api/apartments/creator/{userId} - Get user's created apartments
+
+Residence (User-Apartment Links):
+- GET    /api/residence/user/{userId}        - Get user's apartment ID
+- GET    /api/residence/apartment/{aptId}    - Get apartment members
+- POST   /api/residence                      - Add user to apartment
+- DELETE /api/residence/{residenceId}        - Remove user from apartment
+
+Chore Management:
+- GET    /api/chores/apartment/{aptId}  - List apartment chores
+- POST   /api/chores                     - Create new chore
+- PUT    /api/chores/{choreId}           - Update chore details
+- PUT    /api/chores/{choreId}/complete  - Mark chore complete
+- DELETE /api/chores/{choreId}           - Remove chore
+
+Grocery Management:
+- GET    /api/groceries/apartment/{aptId}    - List apartment groceries
+- POST   /api/groceries                      - Add grocery item
+- PUT    /api/groceries/{itemId}/purchased   - Mark item purchased
+- DELETE /api/groceries/{itemId}             - Remove item
+
+Payment Management:
+- GET    /api/rent/apartment/{aptId}  - Get payment records
+- POST   /api/rent                    - Create payment record
+- PUT    /api/rent/{rentId}           - Update payment details
+
+Payment Queue:
+- GET    /api/payment-queue/{aptId}          - Get rotation order
+- POST   /api/payment-queue/initialize       - Set up new queue
+- POST   /api/payment-queue/add              - Add user to queue
+- DELETE /api/payment-queue/remove           - Remove user from queue
+- GET    /api/payment-queue/{aptId}/current-payer - Get current month's payer
+
+Calculator:
+- POST   /api/calculator/calculate  - Perform mathematical operations
+
+All endpoints support CORS for http://localhost:5173 and http://localhost:5174.
+
+
+DEPLOYMENT & INFRASTRUCTURE
+--------------------------------------------------------------------------------
+
+Docker Configuration:
+- Multi-stage Dockerfile for optimized backend builds
+- Docker Compose orchestration for PostgreSQL and Spring Boot
+- Named volumes for persistent database storage
+- Health checks for service readiness
+- Bridge networking for container communication
+
+Container Services:
+- roomy-postgres: PostgreSQL 15 Alpine with automatic schema initialization
+- roomy-backend: Spring Boot application with dependency on database health
+
+Build Process:
+- Backend: Maven package with test skipping for faster builds
+- Frontend: Vite production build with code splitting and minification
+- Output: Executable JAR (backend) and static files (frontend)
+
+Automated Startup Scripts:
+- start.bat (Windows PowerShell)
+- start.sh (Linux Bash)
+- start-mac.sh (macOS with permission fixes)
+
+Script Features:
+- Menu-driven interface with 13 options
+- Full stack startup (backend + frontend)
+- Individual service control
+- Production builds for both tiers
+- Backend restart with automatic rebuild
+- Database reset and migration support
+- Service status monitoring
+- Documentation access
+
+Performance Optimizations:
+- Frontend lazy loading for non-critical routes
+- Manual chunk splitting for vendor dependencies
+- Optimized dependency pre-bundling
+- Terser minification for production builds
+- Source map generation disabled for smaller bundles
+
+
+SECURITY & DATA MANAGEMENT
+--------------------------------------------------------------------------------
+
+Authentication:
+- Password-based authentication (stored in PostgreSQL)
+- Session management via localStorage
+- CORS configuration to restrict API access
+
+Data Validation:
+- Backend: Model validation and constraint checking
+- Database: CHECK constraints on status and payment types
+- Frontend: Form validation with error states
+
+Data Integrity:
+- Foreign key constraints with CASCADE delete behavior
+- UNIQUE constraints on user-apartment relationships
+- Transaction support for multi-table operations
+
+Test Data:
+- Seed data includes 3 test users (testuser, john, jane)
+- Pre-configured test apartments and relationships
+- Sample chores, groceries, and payment records
+
+
+DEVELOPMENT WORKFLOW
+--------------------------------------------------------------------------------
+
+Local Development:
+1. Backend: Maven Spring Boot run (localhost:8080)
+2. Frontend: Vite dev server (localhost:5173)
+3. Database: PostgreSQL via Docker or local installation
+
+Production Build:
+1. Backend: maven clean package (creates executable JAR)
+2. Frontend: vite build (creates optimized static files)
+3. Deployment: Docker Compose for full stack orchestration
+
+Database Management:
+- Schema initialization via init.sql on first container startup
+- Migration support through migration.sql for schema updates
+- Reset capability via volume deletion and recreation
+
+
+PROJECT STRUCTURE
+--------------------------------------------------------------------------------
+
+Root Directory:
+- README.md: Comprehensive setup and usage documentation
+- STARTUP-SCRIPTS.md: Detailed script usage guide
+- start.bat / start.sh / start-mac.sh: Platform-specific launchers
+- fix-permissions-mac.sh: macOS permission fix utility
+
+Backend Directory (RoomyFinal-Backend/RoomyFinal-Backend/):
+- src/main/java/com/roomy/: Java source code
+  * controller/: REST API endpoints
+  * model/: Domain entities
+  * repository/: Data access layers
+  * service/: Business logic
+- src/main/resources/: Configuration files
+  * application.properties: Spring Boot configuration
+- docker-compose.yml: Container orchestration
+- Dockerfile: Backend container definition
+- init.sql: Database schema and seed data
+- migration.sql: Schema update scripts
+- pom.xml: Maven dependencies and build configuration
+
+Frontend Directory (RoomyFinal-main/RoomyFinal-main/):
+- src/: React application source
+  * [Feature]/: Feature-specific components and styles
+  * components/: Reusable UI components
+  * App.jsx: Root application component with routing
+  * main.jsx: Application entry point
+  * index.css: Global styles and CSS variables
+- public/: Static assets
+- package.json: NPM dependencies and scripts
+- vite.config.js: Vite build configuration
+- eslint.config.js: Code linting rules
+
+
+DESIGN PRINCIPLES
+--------------------------------------------------------------------------------
+
+User Experience:
+- Mobile-first responsive design
+- Intuitive navigation with clear visual hierarchy
+- Loading states and skeleton screens
+- Toast notifications for user feedback
+- Accessible keyboard navigation
+- High contrast for readability
+
+Code Quality:
+- Component-based architecture for reusability
+- Separation of concerns (MVC pattern in backend)
+- RESTful API design principles
+- Consistent naming conventions
+- Comprehensive error handling
+- No compilation errors or console warnings
+
+Performance:
+- Lazy loading for improved initial load time
+- Code splitting to reduce bundle size
+- Database indexing on foreign keys
+- Connection pooling for database efficiency
+- Optimized asset delivery via Vite
+
+
+TESTING & QUALITY ASSURANCE
+--------------------------------------------------------------------------------
+
+Backend Testing:
+- Spring Boot Test framework integration
+- Unit test structure in src/test/java/com/roomy/
+- Test data seeding for development environments
+
+Frontend Testing:
+- ESLint for code quality enforcement
+- React Fast Refresh for development efficiency
+- Vite's built-in error overlay for debugging
+
+Database Testing:
+- Seed data for feature validation
+- Rollback capability via volume reset
+
+
+CONFIGURATION MANAGEMENT
+--------------------------------------------------------------------------------
+
+Backend Configuration (application.properties):
+- Database connection URL, username, password
+- Server port (default: 8080)
+- Logging levels for debugging
+- Environment variable support for containerized deployments
+
+Frontend Configuration:
+- API base URL (http://localhost:8080)
+- Vite dev server port (default: 5173)
+- Build output directory (dist/)
+- Chunk size warning limits
+
+Database Configuration (docker-compose.yml):
+- PostgreSQL database name, user, password
+- Port mapping (5432:5432)
+- Volume mount for data persistence
+- Initialization script mounting
+
+
+DEPENDENCIES
+--------------------------------------------------------------------------------
+
+Backend Dependencies (via Maven):
+- spring-boot-starter-web: REST API support
+- spring-boot-starter-data-jdbc: Database integration
+- postgresql: PostgreSQL JDBC driver
+- spring-boot-starter-test: Testing framework
+
+Frontend Dependencies (via NPM):
+- react / react-dom: Core framework
+- react-router-dom: Client-side routing
+- axios: HTTP client for API calls
+- react-icons: Icon library
+- vite: Build tool and dev server
+
+Development Dependencies:
+- @vitejs/plugin-react: React support for Vite
+- eslint: Code linting
+- eslint-plugin-react-hooks: React-specific linting rules
+- eslint-plugin-react-refresh: Fast refresh validation
+
+
+KNOWN FEATURES & EDGE CASES
+--------------------------------------------------------------------------------
+
+Payment System:
+- Supports 0 roommates scenario (user pays full rent)
+- Effective participants calculation: max(roommates.length, 1)
+- Queue rotation based on (year * 12 + month) % queueSize
+- Fallback to current user as payer when queue empty
+
+Apartment Management:
+- Creator automatically joins apartment upon creation
+- Roommate count includes creator in display
+- Supports joining via apartment ID for non-creators
+
+Chore System:
+- Recurring chores maintain schedule without duplication
+- Completion tracking per assignment instance
+- Supports multiple assignees per chore
+
+Data Persistence:
+- Payment settings (rent amount, type, due date) persist in database
+- User status updates stored and displayed to roommates
+- Grocery purchase status maintains history
+
+
+FUTURE ENHANCEMENT OPPORTUNITIES
+--------------------------------------------------------------------------------
+
+Potential Features:
+- Push notifications for upcoming payments and chores
+- Expense tracking beyond rent payments
+- File attachment support for receipts and documents
+- In-app messaging between roommates
+- Calendar integration for chore scheduling
+- Mobile application (React Native)
+- Payment gateway integration for actual transactions
+- Analytics dashboard for spending patterns
+- Roommate rating and feedback system
+- Lease document storage
+
+
+LICENSE & CREDITS
+--------------------------------------------------------------------------------
+
+License: MIT License
+Framework Credits:
+- Spring Boot (Apache License 2.0)
+- React (MIT License)
+- PostgreSQL (PostgreSQL License)
+- Vite (MIT License)
+

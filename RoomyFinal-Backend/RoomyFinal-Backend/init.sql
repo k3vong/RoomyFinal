@@ -47,6 +47,7 @@ CREATE TABLE apartments (
     room_number VARCHAR(20),
     rent_amount DECIMAL(10,2),
     rent_due_day INT,
+    payment_type VARCHAR(20) CHECK (payment_type IN ('SPLIT', 'QUEUE')),
     created_by INT REFERENCES users(user_id)
 );
 
@@ -68,6 +69,16 @@ CREATE TABLE rent_payments (
     payment_type VARCHAR(20) CHECK (payment_type IN ('SPLIT', 'QUEUE')),
     paid_by INT REFERENCES users(user_id),
     is_paid BOOLEAN DEFAULT FALSE
+);
+
+-- Payment Queue Table (for rotating payments)
+CREATE TABLE payment_queue (
+    queue_id SERIAL PRIMARY KEY,
+    apartment_id INT REFERENCES apartments(apartment_id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    queue_position INT NOT NULL,
+    UNIQUE(apartment_id, user_id),
+    UNIQUE(apartment_id, queue_position)
 );
 
 -- Chores Table

@@ -6,22 +6,21 @@ import Navigation from '../components/Navigation';
 import PageLayout from '../components/PageLayout';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import Input from '../components/Input';
+import Input, { Select } from '../components/Input';
 import './Payments.css';
 
 export default function Payments() {
-  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
   const [userApartmentId, setUserApartmentId] = useState(null);
+  const [apartmentData, setApartmentData] = useState(null);
   const [roommates, setRoommates] = useState([]);
-  const [expandedPayment, setExpandedPayment] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [payingRentId, setPayingRentId] = useState(null);
+  const [paymentQueue, setPaymentQueue] = useState([]);
+  const [currentPayerId, setCurrentPayerId] = useState(null);
+  const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
-    dueDate: '',
-    totalAmount: '',
-    paymentType: 'QUEUE'
+    rentAmount: '',
+    paymentType: 'SPLIT',
+    rentDueDay: ''
   });
   
   const navigate = useNavigate();
@@ -29,10 +28,10 @@ export default function Payments() {
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
-    fetchUserApartmentAndPayments();
+    fetchPaymentData();
   }, []);
 
-  const fetchUserApartmentAndPayments = async () => {
+  const fetchPaymentData = async () => {
     try {
       // Get user's apartment
       const aptResponse = await axios.get(
@@ -43,98 +42,96 @@ export default function Payments() {
       if (apartmentId) {
         setUserApartmentId(apartmentId);
         
+        // Get apartment details
+        const apartmentResponse = await axios.get(
+          `http://localhost:8080/api/apartments/${apartmentId}`
+        );
+        setApartmentData(apartmentResponse.data);
+        
         // Get roommates
         const roommatesResponse = await axios.get(
           `http://localhost:8080/api/residence/apartment/${apartmentId}`
         );
+        console.log('Roommates data:', roommatesResponse.data);
         setRoommates(roommatesResponse.data);
         
-        // Fetch payments for that apartment
-        const paymentsResponse = await axios.get(
-          `http://localhost:8080/api/rent/${apartmentId}`
+        // Get payment queue if it exists
+        const queueResponse = await axios.get(
+          `http://localhost:8080/api/payment-queue/${apartmentId}`
         );
-        setPayments(paymentsResponse.data);
+        setPaymentQueue(queueResponse.data);
+        
+        // Get current payer for queue
+        if (queueResponse.data.length > 0) {
+          const currentPayerResponse = await axios.get(
+            `http://localhost:8080/api/payment-queue/${apartmentId}/current-payer`
+          );
+          setCurrentPayerId(currentPayerResponse.data.userId);
+        }
+        
+        // Set form data from apartment
+        setFormData({
+          rentAmount: apartmentResponse.data.rentAmount || '',
+          paymentType: apartmentResponse.data.paymentType || 'SPLIT',
+          rentDueDay: apartmentResponse.data.rentDueDay || ''
+        });
       }
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      console.error('Error fetching payment data:', error);
       setLoading(false);
     }
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleSave = async () => {
     if (!userApartmentId) {
       showToast('You need to join an apartment first!', 'warning');
       return;
     }
 
-    setSubmitting(true);
-    try {
-      await axios.post('http://localhost:8080/api/rent', {
-        apartmentId: userApartmentId,
-        dueDate: formData.dueDate,
-        totalAmount: parseFloat(formData.totalAmount),
-        paymentType: formData.paymentType,
-        paidBy: null,
-        isPaid: false
-      });
-      showToast('Payment added successfully!', 'success');
-      setShowForm(false);
-      setFormData({ dueDate: '', totalAmount: '', paymentType: 'QUEUE' });
-      await fetchUserApartmentAndPayments();
-    } catch (error) {
-      console.error('Error adding payment:', error);
-      showToast('Failed to add payment', 'error');
-    } finally {
-      setSubmitting(false);
+    if (!formData.rentAmount || !formData.paymentType || !formData.rentDueDay) {
+      showToast('Please fill in all fields', 'warning');
+      return;
     }
-  };
 
-  const handleMarkPaid = async (rentId) => {
-    setPayingRentId(rentId);
     try {
-      await axios.put(
-        `http://localhost:8080/api/rent/${rentId}/pay?userId=${user.userId}`
-      );
-      showToast('Payment marked as paid!', 'success');
-      await fetchUserApartmentAndPayments();
+      // Update apartment with payment info
+      await axios.put(`http://localhost:8080/api/apartments/${userApartmentId}`, {
+        ...apartmentData,
+        rentAmount: parseFloat(formData.rentAmount),
+        rentDueDay: parseInt(formData.rentDueDay),
+        paymentType: formData.paymentType
+      });
+
+      // If payment type is QUEUE, initialize the queue
+      if (formData.paymentType === 'QUEUE') {
+        const allUserIds = roommates.map(r => r.userId);
+        await axios.post('http://localhost:8080/api/payment-queue/initialize', {
+          apartmentId: userApartmentId,
+          userIds: allUserIds
+        });
+      }
+
+      showToast('Payment settings saved!', 'success');
+      setEditing(false);
+      await fetchPaymentData();
     } catch (error) {
-      console.error('Error marking payment as paid:', error);
-      showToast('Failed to mark payment as paid', 'error');
-    } finally {
-      setPayingRentId(null);
+      console.error('Error saving payment settings:', error);
+      showToast('Failed to save payment settings', 'error');
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     navigate('/');
-  };
-
-  const togglePaymentDetails = (rentId) => {
-    setExpandedPayment(expandedPayment === rentId ? null : rentId);
-  };
-
-  const getPaymentStatus = (payment) => {
-    if (payment.isPaid) return { text: 'Paid', class: 'status-paid', icon: '✓' };
-    
-    const dueDate = new Date(payment.dueDate);
-    const today = new Date();
-    const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-    
-    if (daysUntil < 0) return { text: 'Overdue', class: 'status-overdue', icon: '!' };
-    if (daysUntil === 0) return { text: 'Due Today', class: 'status-due-today', icon: '⚠' };
-    if (daysUntil <= 3) return { text: `Due in ${daysUntil}d`, class: 'status-due-soon', icon: '⏰' };
-    return { text: 'Upcoming', class: 'status-upcoming', icon: '📅' };
   };
 
   if (loading) {
@@ -144,7 +141,7 @@ export default function Payments() {
         <PageLayout>
           <div className="loading-state">
             <div className="spinner"></div>
-            <p>Loading payments...</p>
+            <p>Loading payment information...</p>
           </div>
         </PageLayout>
       </>
@@ -171,270 +168,311 @@ export default function Payments() {
     );
   }
 
+  const totalParticipants = roommates.length;
+  console.log('Total participants:', totalParticipants, 'Roommates:', roommates);
+  
+  // If no roommates, assume creator is the only participant (paying full amount)
+  const effectiveParticipants = totalParticipants > 0 ? totalParticipants : 1;
+  const amountPerPerson = formData.rentAmount
+    ? (parseFloat(formData.rentAmount) / effectiveParticipants).toFixed(2)
+    : '0.00';
+
+  // If no roommates in queue, assume current user is the payer
+  const currentPayer = currentPayerId 
+    ? roommates.find(r => r.userId === currentPayerId)
+    : (roommates.length === 0 ? { userId: user.userId, firstName: user.firstName, lastName: user.lastName } : null);
+
+  const hasCompleteSettings = formData.rentAmount && formData.paymentType && formData.rentDueDay;
+
+  // Handle case where user created apartment but isn't joined yet
+  const handleJoinMyApartment = async () => {
+    try {
+      await axios.post(
+        `http://localhost:8080/api/residence/join?userId=${user.userId}&apartmentId=${userApartmentId}`
+      );
+      showToast('Joined apartment successfully!', 'success');
+      await fetchPaymentData();
+    } catch (error) {
+      console.error('Error joining apartment:', error);
+      showToast('Failed to join apartment', 'error');
+    }
+  };
+
   return (
     <>
       <Navigation currentUser={user} onLogout={handleLogout} />
       <PageLayout
         title="💰 Rent Payments"
-        subtitle="Manage and track all rent payments for your apartment"
+        subtitle="Configure and manage rent payment settings"
         actions={
           <div className="page-actions">
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
               ← Back to Dashboard
             </Button>
-            <Button 
-              variant="primary"
-              onClick={() => setShowForm(!showForm)}
-            >
-              {showForm ? '✕ Cancel' : '+ New Payment'}
-            </Button>
+            {!editing && hasCompleteSettings && (
+              <Button variant="primary" onClick={() => setEditing(true)}>
+                ✏️ Edit Settings
+              </Button>
+            )}
           </div>
         }
       >
+        {/* Payment Configuration Form */}
+        {(!hasCompleteSettings || editing) && (
+          <Card title="Payment Configuration" className="payment-config-card">
+            <div className="config-form">
+              <Input
+                label="Total Rent Amount"
+                type="number"
+                name="rentAmount"
+                placeholder="1200.00"
+                value={formData.rentAmount}
+                onChange={handleChange}
+                step="0.01"
+                required
+                icon="💵"
+                fullWidth
+              />
 
-        {/* Create Form */}
-        {showForm && (
-          <Card title="Create New Payment" className="payment-form-card">
-            <form onSubmit={handleSubmit} className="payment-form">
-              <div className="form-row">
-                <Input
-                  label="Due Date"
-                  type="date"
-                  name="dueDate"
-                  value={formData.dueDate}
-                  onChange={handleChange}
-                  required
-                  fullWidth
-                />
+              <Select
+                label="Payment Type"
+                name="paymentType"
+                value={formData.paymentType}
+                onChange={handleChange}
+                fullWidth
+              >
+                <option value="SPLIT">Split Evenly</option>
+                <option value="QUEUE">Rotating Queue</option>
+              </Select>
 
-                <Input
-                  label="Total Amount"
-                  type="number"
-                  name="totalAmount"
-                  placeholder="0.00"
-                  value={formData.totalAmount}
-                  onChange={handleChange}
-                  step="0.01"
-                  required
-                  icon="💵"
-                  fullWidth
-                />
+              <Input
+                label="Rent Due Day (1-31)"
+                type="number"
+                name="rentDueDay"
+                placeholder="1"
+                value={formData.rentDueDay}
+                onChange={handleChange}
+                min="1"
+                max="31"
+                required
+                fullWidth
+              />
+
+              <div className="payment-type-info">
+                {formData.paymentType === 'SPLIT' ? (
+                  <div className="info-box split">
+                    <div className="info-icon">👥</div>
+                    <div className="info-text">
+                      <strong>Split Payment</strong>
+                      <p>Total rent is divided equally among all roommates. Each person pays their share.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="info-box queue">
+                    <div className="info-icon">🔄</div>
+                    <div className="info-text">
+                      <strong>Rotating Queue</strong>
+                      <p>Roommates take turns paying the full rent amount each month. The queue rotates automatically.</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="payment-type-selector">
-                <label className="payment-type-label">Payment Type</label>
-                <div className="payment-type-options">
-                  <label className={`type-option ${formData.paymentType === 'SPLIT' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="paymentType"
-                      value="SPLIT"
-                      checked={formData.paymentType === 'SPLIT'}
-                      onChange={handleChange}
-                    />
-                    <div className="type-content">
-                      <div className="type-icon">👥</div>
-                      <div>
-                        <div className="type-title">Split Evenly</div>
-                        <div className="type-description">Everyone pays equal share</div>
-                      </div>
-                    </div>
-                  </label>
-                  
-                  <label className={`type-option ${formData.paymentType === 'QUEUE' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="paymentType"
-                      value="QUEUE"
-                      checked={formData.paymentType === 'QUEUE'}
-                      onChange={handleChange}
-                    />
-                    <div className="type-content">
-                      <div className="type-icon">🔄</div>
-                      <div>
-                        <div className="type-title">Rotating</div>
-                        <div className="type-description">Take turns paying full amount</div>
-                      </div>
-                    </div>
-                  </label>
+              <div className="form-actions">
+                {editing && (
+                  <Button variant="outline" onClick={() => {
+                    setEditing(false);
+                    setFormData({
+                      rentAmount: apartmentData.rentAmount || '',
+                      paymentType: apartmentData.paymentType || 'SPLIT',
+                      rentDueDay: apartmentData.rentDueDay || ''
+                    });
+                  }}>
+                    Cancel
+                  </Button>
+                )}
+                <Button variant="primary" onClick={handleSave} fullWidth={!editing}>
+                  {editing ? 'Save Changes' : 'Save Configuration'}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Payment Summary - Only show when settings are complete and not editing */}
+        {hasCompleteSettings && !editing && (
+          <>
+            <Card className="payment-summary-card">
+              <div className="summary-header">
+                <div className="rent-amount-large">
+                  <span className="currency">$</span>
+                  {parseFloat(formData.rentAmount).toFixed(2)}
+                </div>
+                <div className="payment-type-badge">
+                  {formData.paymentType === 'SPLIT' ? '👥 Split' : '🔄 Queue'}
                 </div>
               </div>
 
-              <Button type="submit" variant="primary" fullWidth disabled={submitting}>
-                {submitting ? 'Creating...' : 'Create Payment'}
-              </Button>
-            </form>
-          </Card>
-        )}
-
-        {/* Payments Summary */}
-        {payments.length > 0 && (
-          <div className="payments-summary">
-            <Card className="summary-card">
-              <div className="summary-label">Total Payments</div>
-              <div className="summary-value">{payments.length}</div>
-            </Card>
-            <Card className="summary-card">
-              <div className="summary-label">Paid</div>
-              <div className="summary-value paid">{payments.filter(p => p.isPaid).length}</div>
-            </Card>
-            <Card className="summary-card">
-              <div className="summary-label">Pending</div>
-              <div className="summary-value pending">{payments.filter(p => !p.isPaid).length}</div>
-            </Card>
-            <Card className="summary-card">
-              <div className="summary-label">Total Amount</div>
-              <div className="summary-value amount">
-                ${payments.reduce((sum, p) => sum + (p.totalAmount || 0), 0).toFixed(2)}
+              <div className="due-date-display">
+                <span className="due-label">Due on the</span>
+                <span className="due-day">{formData.rentDueDay}</span>
+                <span className="due-suffix">
+                  {formData.rentDueDay === '1' ? 'st' : 
+                   formData.rentDueDay === '2' ? 'nd' : 
+                   formData.rentDueDay === '3' ? 'rd' : 'th'} of each month
+                </span>
               </div>
             </Card>
-          </div>
-        )}
 
-        {/* Payments List */}
-        {payments.length === 0 ? (
-          <Card className="empty-state-card">
-            <div className="empty-state-content">
-              <div className="empty-state-icon">💸</div>
-              <h3>No Payments Yet</h3>
-              <p>Create your first rent payment to get started tracking!</p>
-              <Button variant="primary" size="lg" onClick={() => setShowForm(true)}>
-                Create First Payment
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <div className="payments-list">
-            {payments.map((payment) => {
-              const status = getPaymentStatus(payment);
-              const isExpanded = expandedPayment === payment.rentId;
-              
-              return (
-                <Card
-                  key={payment.rentId} 
-                  className={`payment-card ${payment.isPaid ? 'paid' : ''}`}
-                  hover
-                >
-                  <div className="payment-main">
-                    <div className="payment-info">
-                      <div className="payment-amount-section">
-                        <div className="payment-amount">${payment.totalAmount?.toFixed(2)}</div>
-                        <div className="payment-type-badge">
-                          {payment.paymentType === 'SPLIT' ? '👥 Split' : '🔄 Rotating'}
-                        </div>
-                      </div>
-                      
-                      <div className="payment-meta">
-                        <div className="meta-item">
-                          <span className="meta-label">Due Date</span>
-                          <span className="meta-value">
-                            {new Date(payment.dueDate).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric' 
-                            })}
-                          </span>
-                        </div>
-                        
-                        {payment.paymentType === 'SPLIT' && roommates.length > 0 && (
-                          <div className="meta-item">
-                            <span className="meta-label">Per Person</span>
-                            <span className="meta-value highlight">
-                              ${(payment.totalAmount / roommates.length).toFixed(2)}
-                            </span>
+            {/* Split View */}
+            {formData.paymentType === 'SPLIT' && (
+              <Card className="payment-breakdown-card split-view">
+                <h2 className="breakdown-title">💳 The Amount You Pay:</h2>
+                <div className="your-amount">
+                  <span className="currency">$</span>
+                  {amountPerPerson}
+                </div>
+                <div className="breakdown-explanation">
+                  Split evenly among {effectiveParticipants} {effectiveParticipants === 1 ? 'person' : 'roommates'}
+                </div>
+
+                {roommates.length > 0 ? (
+                  <div className="roommates-breakdown">
+                    <h3>All Participants:</h3>
+                    <div className="roommate-list">
+                      {roommates.map(roommate => (
+                        <div key={roommate.userId} className="roommate-item">
+                          <div className="roommate-info">
+                            <div className="roommate-avatar">
+                              {roommate.firstName?.[0]}{roommate.lastName?.[0]}
+                            </div>
+                            <div className="roommate-details">
+                              <div className="roommate-name">
+                                {roommate.firstName} {roommate.lastName}
+                                {roommate.userId === user.userId && (
+                                  <span className="you-badge">You</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        )}
-                      </div>
+                          <div className="roommate-amount">${amountPerPerson}</div>
+                        </div>
+                      ))}
                     </div>
-                    
-                    <div className="payment-actions">
-                      <div className={`payment-status ${status.class}`}>
-                        <span className="status-icon">{status.icon}</span>
-                        <span className="status-text">{status.text}</span>
-                      </div>
-                      
-                      <div className="action-buttons">
-                        {!payment.isPaid && (
-                          <Button 
-                            variant="success"
-                            size="sm"
-                            onClick={() => handleMarkPaid(payment.rentId)}
-                            disabled={payingRentId === payment.rentId}
-                          >
-                            {payingRentId === payment.rentId ? 'Paying...' : '✓ Pay'}
-                          </Button>
-                        )}
-                        
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => togglePaymentDetails(payment.rentId)}
-                        >
-                          {isExpanded ? '▲' : '▼'}
-                        </Button>
+                  </div>
+                ) : (
+                  <div className="roommates-breakdown">
+                    <h3>Participant:</h3>
+                    <div className="roommate-list">
+                      <div className="roommate-item">
+                        <div className="roommate-info">
+                          <div className="roommate-avatar">
+                            {user.firstName?.[0]}{user.lastName?.[0]}
+                          </div>
+                          <div className="roommate-details">
+                            <div className="roommate-name">
+                              {user.firstName} {user.lastName}
+                              <span className="you-badge">You</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="roommate-amount">${amountPerPerson}</div>
                       </div>
                     </div>
                   </div>
-                  
-                  {isExpanded && (
-                    <div className="payment-details-expanded">
-                      <div className="details-header">Payment Breakdown</div>
-                      
-                      {payment.paymentType === 'SPLIT' && roommates.length > 0 ? (
-                        <div className="split-breakdown">
-                          <div className="breakdown-intro">
-                            Split evenly among {roommates.length} roommate{roommates.length !== 1 ? 's' : ''}
-                          </div>
-                          <div className="roommate-list">
-                            {roommates.map(roommate => (
-                              <div key={roommate.userId} className="roommate-row">
-                                <div className="roommate-info">
-                                  <div className="roommate-avatar">
-                                    {roommate.firstName?.[0]}{roommate.lastName?.[0]}
-                                  </div>
-                                  <div className="roommate-name">
-                                    {roommate.firstName} {roommate.lastName}
-                                  </div>
-                                </div>
-                                <div className="roommate-share">
-                                  ${(payment.totalAmount / roommates.length).toFixed(2)}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="queue-breakdown">
-                          <div className="breakdown-intro">
-                            Rotating payment - one person pays the full amount
-                          </div>
-                          {roommates.length > 0 && (
-                            <div className="roommate-list">
-                              {roommates.map(roommate => (
-                                <div key={roommate.userId} className="roommate-tag">
-                                  <div className="roommate-avatar small">
-                                    {roommate.firstName?.[0]}{roommate.lastName?.[0]}
-                                  </div>
-                                  {roommate.firstName} {roommate.lastName}
-                                </div>
-                              ))}
-                            </div>
+                )}
+              </Card>
+            )}
+
+            {/* Queue View */}
+            {formData.paymentType === 'QUEUE' && (
+              <Card className="payment-breakdown-card queue-view">
+                <h2 className="breakdown-title">🔔 Rent Due:</h2>
+                {currentPayer ? (
+                  <>
+                    <div className="current-payer-display">
+                      <div className="payer-avatar-large">
+                        {currentPayer.firstName?.[0]}{currentPayer.lastName?.[0]}
+                      </div>
+                      <div className="payer-info">
+                        <div className="payer-name">
+                          {currentPayer.firstName} {currentPayer.lastName}
+                          {currentPayer.userId === user.userId && (
+                            <span className="you-badge-large">That's You!</span>
                           )}
                         </div>
-                      )}
-                      
-                      {payment.isPaid && payment.paidBy && (
-                        <div className="paid-info">
-                          <span className="paid-icon">✓</span>
-                          Marked as paid by User #{payment.paidBy}
+                        <div className="payer-amount">
+                          <span className="currency">$</span>
+                          {parseFloat(formData.rentAmount).toFixed(2)}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
+                    <div className="queue-explanation">
+                      {currentPayer.userId === user.userId 
+                        ? roommates.length === 0 
+                          ? "You're the only person in this apartment, so you pay the full rent"
+                          : "It's your turn to pay the full rent this month"
+                        : "This person is responsible for paying the full rent this month"}
+                    </div>
+                  </>
+                ) : (
+                  <div className="no-payer-message">
+                    Queue not initialized. Please save your settings.
+                  </div>
+                )}
+
+                {paymentQueue.length > 0 && (
+                  <div className="queue-order">
+                    <h3>Rotation Order:</h3>
+                    <div className="queue-list">
+                      {paymentQueue.map((queueItem, index) => {
+                        const roommate = roommates.find(r => r.userId === queueItem.userId);
+                        const isCurrent = queueItem.userId === currentPayerId;
+                        return roommate ? (
+                          <div 
+                            key={queueItem.queueId} 
+                            className={`queue-item ${isCurrent ? 'current' : ''}`}
+                          >
+                            <div className="queue-position">#{index + 1}</div>
+                            <div className="roommate-avatar small">
+                              {roommate.firstName?.[0]}{roommate.lastName?.[0]}
+                            </div>
+                            <div className="queue-item-name">
+                              {roommate.firstName} {roommate.lastName}
+                              {roommate.userId === user.userId && (
+                                <span className="you-badge">You</span>
+                              )}
+                            </div>
+                            {isCurrent && <div className="current-indicator">● Current</div>}
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )}
+          </>
+        )}
+
+        {/* Roommates Info */}
+        {roommates.length > 0 && hasCompleteSettings && !editing && (
+          <Card className="roommates-info-card">
+            <h3>🏠 Apartment Roommates ({roommates.length})</h3>
+            <div className="roommates-simple-list">
+              {roommates.map(roommate => (
+                <div key={roommate.userId} className="roommate-chip">
+                  <div className="roommate-avatar-small">
+                    {roommate.firstName?.[0]}{roommate.lastName?.[0]}
+                  </div>
+                  <span>
+                    {roommate.firstName} {roommate.lastName}
+                    {roommate.userId === user.userId && ' (You)'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
         )}
       </PageLayout>
     </>

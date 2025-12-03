@@ -85,6 +85,7 @@ export const Select = ({
   error,
   helperText,
   options = [],
+  children,
   fullWidth = false,
   className = '',
   containerClassName = '',
@@ -110,7 +111,7 @@ export const Select = ({
         className={selectClasses}
         {...props}
       >
-        {options.map((option, index) => (
+        {children ? children : options.map((option, index) => (
           <option key={index} value={option.value}>
             {option.label}
           </option>

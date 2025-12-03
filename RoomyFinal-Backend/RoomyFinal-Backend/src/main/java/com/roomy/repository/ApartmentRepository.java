@@ -18,8 +18,8 @@ public class ApartmentRepository {
     //  Add a new apartment
     public int addApartment(Apartment apartment) {
         String sql = """
-            INSERT INTO apartments (complex_name, room_number, rent_amount, rent_due_day, created_by)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO apartments (complex_name, room_number, rent_amount, rent_due_day, payment_type, created_by)
+            VALUES (?, ?, ?, ?, ?, ?)
             RETURNING apartment_id
         """;
 
@@ -28,6 +28,7 @@ public class ApartmentRepository {
                 apartment.getRoomNumber(),
                 apartment.getRentAmount(),
                 apartment.getRentDueDay(),
+                apartment.getPaymentType(),
                 apartment.getCreatedBy());
         
         if (result == null) {
@@ -46,6 +47,7 @@ public class ApartmentRepository {
             apt.setRoomNumber(rs.getString("room_number"));
             apt.setRentAmount(rs.getBigDecimal("rent_amount"));
             apt.setRentDueDay(rs.getInt("rent_due_day"));
+            apt.setPaymentType(rs.getString("payment_type"));
             apt.setCreatedBy((Integer) rs.getObject("created_by"));
             return apt;
         });
@@ -61,6 +63,7 @@ public class ApartmentRepository {
             apt.setRoomNumber(rs.getString("room_number"));
             apt.setRentAmount(rs.getBigDecimal("rent_amount"));
             apt.setRentDueDay(rs.getInt("rent_due_day"));
+            apt.setPaymentType(rs.getString("payment_type"));
             apt.setCreatedBy((Integer) rs.getObject("created_by"));
             return apt;
         }, id);
@@ -72,7 +75,7 @@ public class ApartmentRepository {
     public void updateApartment(Apartment apartment) {
         String sql = """
             UPDATE apartments
-            SET complex_name = ?, room_number = ?, rent_amount = ?, rent_due_day = ?
+            SET complex_name = ?, room_number = ?, rent_amount = ?, rent_due_day = ?, payment_type = ?
             WHERE apartment_id = ?
         """;
         jdbc.update(sql,
@@ -80,6 +83,7 @@ public class ApartmentRepository {
                 apartment.getRoomNumber(),
                 apartment.getRentAmount(),
                 apartment.getRentDueDay(),
+                apartment.getPaymentType(),
                 apartment.getApartmentId());
     }
 
@@ -93,6 +97,7 @@ public class ApartmentRepository {
             apt.setRoomNumber(rs.getString("room_number"));
             apt.setRentAmount(rs.getBigDecimal("rent_amount"));
             apt.setRentDueDay(rs.getInt("rent_due_day"));
+            apt.setPaymentType(rs.getString("payment_type"));
             apt.setCreatedBy((Integer) rs.getObject("created_by"));
             return apt;
         }, userId);
