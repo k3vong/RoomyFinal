@@ -218,6 +218,11 @@ start_fullstack() {
         npm install
     fi
     
+    # Fix permissions for node_modules/.bin (macOS specific)
+    if [ -d "node_modules/.bin" ]; then
+        chmod -R +x node_modules/.bin 2>/dev/null
+    fi
+    
     # Start frontend in new Terminal window (macOS specific)
     osascript -e 'tell application "Terminal" to do script "cd '"$FRONTEND_DIR"' && npm run dev"'
     sleep 2
@@ -265,6 +270,12 @@ start_frontend() {
     if [ ! -d "node_modules" ]; then
         echo "  📦 Installing dependencies..."
         npm install
+    fi
+    
+    # Fix permissions for node_modules/.bin (macOS specific)
+    if [ -d "node_modules/.bin" ]; then
+        echo "  🔧 Fixing permissions..."
+        chmod -R +x node_modules/.bin 2>/dev/null
     fi
     
     echo "  🎨 Starting Vite dev server..."
