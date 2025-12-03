@@ -43,6 +43,12 @@ public class ApartmentController {
     }
 
     //  Delete apartment
+    // Get apartments created by a user
+    @GetMapping("/creator/{userId}")
+    public List<Apartment> getApartmentsByCreator(@PathVariable int userId) {
+        return repo.getApartmentsByCreator(userId);
+    }
+
     @DeleteMapping("/{id}")
     public void deleteApartment(@PathVariable int id) {
         repo.deleteApartment(id);

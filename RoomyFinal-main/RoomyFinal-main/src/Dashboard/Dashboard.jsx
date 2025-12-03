@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ToastContext } from '../App';
 import Navigation from '../components/Navigation';
 import PageLayout from '../components/PageLayout';
 import Card from '../components/Card';
@@ -24,6 +25,7 @@ export default function Dashboard() {
   });
   
   const user = JSON.parse(localStorage.getItem('user'));
+  const showToast = useContext(ToastContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -115,12 +117,13 @@ export default function Dashboard() {
       };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
-      alert('Status updated successfully!');
+      showToast('Status updated successfully!', 'success');
       setShowStatusUpdate(false);
-      window.location.reload(); // Reload to show updated status
+      // Reload the page to refresh user data in all components
+      window.location.reload();
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status');
+      showToast('Failed to update status', 'error');
     }
   };
 
@@ -311,37 +314,78 @@ export default function Dashboard() {
                 </div>
               </Card>
             )}
-            )}
 
             {/* Quick Actions */}
             <Card title="Quick Actions" subtitle="Manage your apartment">
               <div className="quick-actions-grid">
-                <div className="action-card" onClick={() => navigate('/chores')}>
+                <div 
+                  className="action-card" 
+                  onClick={() => navigate('/chores')}
+                  onKeyPress={(e) => e.key === 'Enter' && navigate('/chores')}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Manage chores"
+                >
                   <div className="action-icon">✅</div>
                   <h4>Chores</h4>
                   <p>Manage tasks</p>
                 </div>
-                <div className="action-card" onClick={() => navigate('/payments')}>
+                <div 
+                  className="action-card" 
+                  onClick={() => navigate('/payments')}
+                  onKeyPress={(e) => e.key === 'Enter' && navigate('/payments')}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Track rent payments"
+                >
                   <div className="action-icon">💰</div>
                   <h4>Payments</h4>
                   <p>Track rent</p>
                 </div>
-                <div className="action-card" onClick={() => navigate('/groceries')}>
+                <div 
+                  className="action-card" 
+                  onClick={() => navigate('/groceries')}
+                  onKeyPress={(e) => e.key === 'Enter' && navigate('/groceries')}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Manage grocery shopping list"
+                >
                   <div className="action-icon">🛒</div>
                   <h4>Groceries</h4>
                   <p>Shopping list</p>
                 </div>
-                <div className="action-card" onClick={() => navigate('/roommates')}>
+                <div 
+                  className="action-card" 
+                  onClick={() => navigate('/roommates')}
+                  onKeyPress={(e) => e.key === 'Enter' && navigate('/roommates')}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="View roommates"
+                >
                   <div className="action-icon">👥</div>
                   <h4>Roommates</h4>
                   <p>View members</p>
                 </div>
-                <div className="action-card" onClick={() => navigate('/calculator')}>
+                <div 
+                  className="action-card" 
+                  onClick={() => navigate('/calculator')}
+                  onKeyPress={(e) => e.key === 'Enter' && navigate('/calculator')}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Split bills with calculator"
+                >
                   <div className="action-icon">🧮</div>
                   <h4>Calculator</h4>
                   <p>Split bills</p>
                 </div>
-                <div className="action-card" onClick={() => navigate('/profile')}>
+                <div 
+                  className="action-card" 
+                  onClick={() => navigate('/profile')}
+                  onKeyPress={(e) => e.key === 'Enter' && navigate('/profile')}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Edit profile settings"
+                >
                   <div className="action-icon">⚙️</div>
                   <h4>Profile</h4>
                   <p>Settings</p>

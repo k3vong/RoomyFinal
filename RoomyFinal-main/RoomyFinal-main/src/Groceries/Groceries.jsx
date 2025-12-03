@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ToastContext } from '../App';
 import Navigation from '../components/Navigation';
 import PageLayout from '../components/PageLayout';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import Input from '../components/Input';
+import Input, { Select } from '../components/Input';
 import './Groceries.css';
 
 export default function Groceries() {
@@ -13,6 +14,9 @@ export default function Groceries() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [userApartmentId, setUserApartmentId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [purchasingId, setPurchasingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     quantity: '',
@@ -20,6 +24,7 @@ export default function Groceries() {
   });
   
   const navigate = useNavigate();
+  const showToast = useContext(ToastContext);
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
@@ -60,10 +65,11 @@ export default function Groceries() {
     e.preventDefault();
     
     if (!userApartmentId) {
-      alert('You need to join an apartment first!');
+      showToast('You need to join an apartment first!', 'warning');
       return;
     }
 
+    setSubmitting(true);
     try {
       await axios.post('http://localhost:8080/api/groceries', {
         apartmentId: userApartmentId,
@@ -73,23 +79,28 @@ export default function Groceries() {
         category: formData.category,
         purchased: false
       });
-      alert('Grocery item added!');
+      showToast('Grocery item added!', 'success');
       setShowForm(false);
       setFormData({ name: '', quantity: '', category: '' });
-      fetchUserApartmentAndGroceries();
+      await fetchUserApartmentAndGroceries();
     } catch (error) {
       console.error('Error adding grocery:', error);
-      alert('Failed to add grocery item');
+      showToast('Failed to add grocery item', 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleMarkPurchased = async (itemId) => {
+    setPurchasingId(itemId);
     try {
       await axios.put(`http://localhost:8080/api/groceries/${itemId}/purchase`);
-      fetchUserApartmentAndGroceries();
+      await fetchUserApartmentAndGroceries();
     } catch (error) {
       console.error('Error marking purchased:', error);
-      alert('Failed to mark item as purchased');
+      showToast('Failed to mark item as purchased', 'error');
+    } finally {
+      setPurchasingId(null);
     }
   };
 
@@ -98,12 +109,15 @@ export default function Groceries() {
       return;
     }
     
+    setDeletingId(itemId);
     try {
       await axios.delete(`http://localhost:8080/api/groceries/${itemId}`);
-      fetchUserApartmentAndGroceries();
+      await fetchUserApartmentAndGroceries();
     } catch (error) {
       console.error('Error deleting grocery:', error);
-      alert('Failed to delete item');
+      showToast('Failed to delete item', 'error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -213,8 +227,8 @@ export default function Groceries() {
                 <option value="Other">Other</option>
               </Select>
 
-              <Button type="submit" variant="primary" fullWidth>
-                Add Item
+              <Button type="submit" variant="primary" fullWidth disabled={submitting}>
+                {submitting ? 'Adding...' : 'Add Item'}
               </Button>
             </form>
           </Card>
@@ -241,15 +255,17 @@ export default function Groceries() {
                       variant="success"
                       size="sm"
                       onClick={() => handleMarkPurchased(item.itemId)}
+                      disabled={purchasingId === item.itemId || deletingId === item.itemId}
                     >
-                      ✓
+                      {purchasingId === item.itemId ? '...' : '✓'}
                     </Button>
                     <Button 
                       variant="danger"
                       size="sm"
                       onClick={() => handleDelete(item.itemId)}
+                      disabled={purchasingId === item.itemId || deletingId === item.itemId}
                     >
-                      ✕
+                      {deletingId === item.itemId ? '...' : '✕'}
                     </Button>
                   </div>
                 </div>
@@ -275,8 +291,9 @@ export default function Groceries() {
                       variant="danger"
                       size="sm"
                       onClick={() => handleDelete(item.itemId)}
+                      disabled={deletingId === item.itemId}
                     >
-                      ✕
+                      {deletingId === item.itemId ? '...' : '✕'}
                     </Button>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ToastContext } from '../App';
 import Navigation from '../components/Navigation';
 import PageLayout from '../components/PageLayout';
 import Card from '../components/Card';
@@ -15,6 +16,8 @@ export default function Payments() {
   const [userApartmentId, setUserApartmentId] = useState(null);
   const [roommates, setRoommates] = useState([]);
   const [expandedPayment, setExpandedPayment] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [payingRentId, setPayingRentId] = useState(null);
   const [formData, setFormData] = useState({
     dueDate: '',
     totalAmount: '',
@@ -22,6 +25,7 @@ export default function Payments() {
   });
   
   const navigate = useNavigate();
+  const showToast = useContext(ToastContext);
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
@@ -69,10 +73,11 @@ export default function Payments() {
     e.preventDefault();
     
     if (!userApartmentId) {
-      alert('You need to join an apartment first!');
+      showToast('You need to join an apartment first!', 'warning');
       return;
     }
 
+    setSubmitting(true);
     try {
       await axios.post('http://localhost:8080/api/rent', {
         apartmentId: userApartmentId,
@@ -82,26 +87,31 @@ export default function Payments() {
         paidBy: null,
         isPaid: false
       });
-      alert('Payment added successfully!');
+      showToast('Payment added successfully!', 'success');
       setShowForm(false);
       setFormData({ dueDate: '', totalAmount: '', paymentType: 'QUEUE' });
-      fetchUserApartmentAndPayments();
+      await fetchUserApartmentAndPayments();
     } catch (error) {
       console.error('Error adding payment:', error);
-      alert('Failed to add payment');
+      showToast('Failed to add payment', 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleMarkPaid = async (rentId) => {
+    setPayingRentId(rentId);
     try {
       await axios.put(
         `http://localhost:8080/api/rent/${rentId}/pay?userId=${user.userId}`
       );
-      alert('Payment marked as paid!');
-      fetchUserApartmentAndPayments();
+      showToast('Payment marked as paid!', 'success');
+      await fetchUserApartmentAndPayments();
     } catch (error) {
-      console.error('Error marking payment:', error);
-      alert('Failed to mark payment as paid');
+      console.error('Error marking payment as paid:', error);
+      showToast('Failed to mark payment as paid', 'error');
+    } finally {
+      setPayingRentId(null);
     }
   };
 
@@ -250,8 +260,8 @@ export default function Payments() {
                 </div>
               </div>
 
-              <Button type="submit" variant="primary" fullWidth>
-                Create Payment
+              <Button type="submit" variant="primary" fullWidth disabled={submitting}>
+                {submitting ? 'Creating...' : 'Create Payment'}
               </Button>
             </form>
           </Card>
@@ -349,8 +359,9 @@ export default function Payments() {
                             variant="success"
                             size="sm"
                             onClick={() => handleMarkPaid(payment.rentId)}
+                            disabled={payingRentId === payment.rentId}
                           >
-                            ✓ Pay
+                            {payingRentId === payment.rentId ? 'Paying...' : '✓ Pay'}
                           </Button>
                         )}
                         

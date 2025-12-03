@@ -36,11 +36,12 @@ echo  ------------------------------------------------------------
 echo    [8] Restart Backend Container
 echo    [9] Stop All Docker Services
 echo    [10] Reset Database (Delete All Data)
-echo    [11] Show Service Status
+echo    [11] Run Database Migration (Keep Data)
+echo    [12] Show Service Status
 echo.
 echo  UTILITIES
 echo  ------------------------------------------------------------
-echo    [12] Open Documentation
+echo    [13] Open Documentation
 echo    [0] Exit
 echo.
 echo  ============================================================
@@ -57,8 +58,9 @@ if "%choice%"=="7" goto build_all
 if "%choice%"=="8" goto restart_backend
 if "%choice%"=="9" goto stop_docker
 if "%choice%"=="10" goto reset_database
-if "%choice%"=="11" goto status
-if "%choice%"=="12" goto docs
+if "%choice%"=="11" goto run_migration
+if "%choice%"=="12" goto status
+if "%choice%"=="13" goto docs
 if "%choice%"=="0" goto end
 
 echo.
@@ -88,6 +90,11 @@ if errorlevel 1 (
     goto menu
 )
 echo  [OK] Docker is running
+
+echo  [1.5/3] Stopping any conflicting services...
+taskkill /F /IM java.exe >nul 2>&1
+timeout /t 1 /nobreak >nul
+echo  [OK] Port 8080 cleared
 
 echo  [2/3] Starting Backend (Docker Compose)...
 cd /d "c:\roomyproject\RoomyFinal-Backend\RoomyFinal-Backend"
@@ -163,6 +170,10 @@ if errorlevel 1 (
     goto menu
 )
 echo  [OK] Docker is running
+
+echo  Stopping any conflicting services...
+taskkill /F /IM java.exe >nul 2>&1
+timeout /t 1 /nobreak >nul
 
 echo  Starting services...
 cd /d "c:\roomyproject\RoomyFinal-Backend\RoomyFinal-Backend"
@@ -387,6 +398,89 @@ echo  Test users restored:
 echo     - testuser / password123
 echo     - john / john123
 echo     - jane / jane123
+echo.
+pause
+goto menu
+
+:run_migration
+cls
+echo.
+echo  ============================================================
+echo   Run Database Migration
+echo  ============================================================
+echo.
+echo  This will apply schema updates to your existing database
+echo  without deleting any data.
+echo.
+echo  Migration includes:
+echo    - Add created_by column to apartments table
+echo    - Add first_name/last_name to users table (if not exists)
+echo.
+set /p confirm="  Type YES to continue: "
+if not "%confirm%"=="YES" (
+    echo.
+    echo  [CANCELLED] Migration cancelled.
+    timeout /t 2 >nul
+    goto menu
+)
+
+echo.
+echo  Checking for local PostgreSQL...
+psql --version >nul 2>&1
+if errorlevel 1 (
+    echo  [WARNING] psql not found in PATH
+    echo.
+    echo  Trying Docker container...
+    docker info >nul 2>&1
+    if errorlevel 1 (
+        echo  [ERROR] Docker is not running!
+        pause
+        goto menu
+    )
+    cd /d "c:\roomyproject\RoomyFinal-Backend\RoomyFinal-Backend"
+    docker exec -i roomy-postgres psql -U roomy_user -d roomy_db -f /docker-entrypoint-initdb.d/migration.sql
+) else (
+    echo  [OK] Using local PostgreSQL
+    cd /d "c:\roomyproject\RoomyFinal-Backend\RoomyFinal-Backend"
+    set PGPASSWORD=roomy_password
+    psql -U roomy_user -d roomy_db -f migration.sql
+)
+
+if errorlevel 1 (
+    echo.
+    echo  [ERROR] Migration failed!
+    echo  Check the error messages above.
+    pause
+    goto menu
+)
+
+echo.
+echo  ============================================================
+echo   SUCCESS: Migration Complete!
+echo  ============================================================
+echo.
+echo  Changes applied:
+echo    - Apartments now track creator (created_by column)
+echo    - Users have first_name/last_name fields
+echo    - Existing data preserved
+echo.
+echo  Backend needs restart to use new schema.
+set /p restart="  Restart backend now? (Y/N): "
+if /i "%restart%"=="Y" (
+    echo.
+    echo  Rebuilding backend...
+    cd /d "c:\roomyproject\RoomyFinal-Backend\RoomyFinal-Backend"
+    call mvnw.cmd clean package -DskipTests
+    echo.
+    echo  Stopping old backend...
+    taskkill /F /IM java.exe 2>nul
+    timeout /t 2 /nobreak >nul
+    echo.
+    echo  Starting new backend...
+    start "Roomy Backend" cmd /k "java -jar target\roomy-backend-1.0.0.jar"
+    echo.
+    echo  [OK] Backend restarted with new schema!
+)
 echo.
 pause
 goto menu

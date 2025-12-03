@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ToastContext } from '../App';
 import Navigation from '../components/Navigation';
 import PageLayout from '../components/PageLayout';
 import Card from '../components/Card';
@@ -14,6 +15,9 @@ export default function Chores() {
   const [showForm, setShowForm] = useState(false);
   const [editingChore, setEditingChore] = useState(null);
   const [userApartmentId, setUserApartmentId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [completingId, setCompletingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -23,6 +27,7 @@ export default function Chores() {
   });
   
   const navigate = useNavigate();
+  const showToast = useContext(ToastContext);
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
@@ -64,10 +69,11 @@ export default function Chores() {
     e.preventDefault();
     
     if (!userApartmentId) {
-      alert('You need to join an apartment first!');
+      showToast('You need to join an apartment first!', 'warning');
       return;
     }
 
+    setSubmitting(true);
     try {
       if (editingChore) {
         // Update existing chore
@@ -81,7 +87,7 @@ export default function Chores() {
           dueDate: formData.dueDate || null,
           isCompleted: editingChore.isCompleted
         });
-        alert('Chore updated successfully!');
+        showToast('Chore updated successfully!', 'success');
       } else {
         // Create new chore
         await axios.post('http://localhost:8080/api/chores', {
@@ -93,7 +99,7 @@ export default function Chores() {
           recurrenceType: formData.isRecurring ? formData.recurrenceType : null,
           dueDate: formData.dueDate || null
         });
-        alert('Chore created successfully!');
+        showToast('Chore created successfully!', 'success');
       }
       setShowForm(false);
       setEditingChore(null);
@@ -104,10 +110,12 @@ export default function Chores() {
         recurrenceType: '', 
         dueDate: '' 
       });
-      fetchUserApartmentAndChores();
+      await fetchUserApartmentAndChores();
     } catch (error) {
       console.error('Error saving chore:', error);
-      alert('Failed to save chore');
+      showToast('Failed to save chore', 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -124,13 +132,16 @@ export default function Chores() {
   };
 
   const handleCompleteChore = async (choreId) => {
+    setCompletingId(choreId);
     try {
       await axios.put(`http://localhost:8080/api/chores/${choreId}/complete`);
-      alert('Chore marked as complete!');
-      fetchUserApartmentAndChores();
+      showToast('Chore marked as complete!', 'success');
+      await fetchUserApartmentAndChores();
     } catch (error) {
       console.error('Error completing chore:', error);
-      alert('Failed to complete chore');
+      showToast('Failed to complete chore', 'error');
+    } finally {
+      setCompletingId(null);
     }
   };
 
@@ -139,12 +150,15 @@ export default function Chores() {
       return;
     }
     
+    setDeletingId(choreId);
     try {
       await axios.delete(`http://localhost:8080/api/chores/${choreId}`);
-      fetchUserApartmentAndChores();
+      await fetchUserApartmentAndChores();
     } catch (error) {
       console.error('Error deleting chore:', error);
-      alert('Failed to delete chore');
+      showToast('Failed to delete chore', 'error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -278,8 +292,8 @@ export default function Chores() {
                 </Select>
               )}
 
-              <Button type="submit" variant="primary" fullWidth>
-                {editingChore ? 'Update Chore' : 'Create Chore'}
+              <Button type="submit" variant="primary" fullWidth disabled={submitting}>
+                {submitting ? 'Saving...' : editingChore ? 'Update Chore' : 'Create Chore'}
               </Button>
             </form>
           </Card>
@@ -334,6 +348,7 @@ export default function Chores() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditChore(chore)}
+                          disabled={completingId === chore.choreId || deletingId === chore.choreId}
                         >
                           Edit
                         </Button>
@@ -341,8 +356,9 @@ export default function Chores() {
                           variant="success"
                           size="sm"
                           onClick={() => handleCompleteChore(chore.choreId)}
+                          disabled={completingId === chore.choreId || deletingId === chore.choreId}
                         >
-                          Mark Complete
+                          {completingId === chore.choreId ? 'Completing...' : 'Mark Complete'}
                         </Button>
                       </>
                     )}
@@ -350,8 +366,9 @@ export default function Chores() {
                       variant="danger"
                       size="sm"
                       onClick={() => handleDeleteChore(chore.choreId)}
+                      disabled={completingId === chore.choreId || deletingId === chore.choreId}
                     >
-                      Delete
+                      {deletingId === chore.choreId ? 'Deleting...' : 'Delete'}
                     </Button>
                   </div>
                 </div>

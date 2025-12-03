@@ -49,4 +49,10 @@ public class ResidenceRepository {
         List<Integer> result = jdbc.query(sql, (rs, rowNum) -> rs.getInt("apartment_id"), userId);
         return result.isEmpty() ? null : result.get(0);
     }
+
+    // Remove user from their apartment (leave apartment)
+    public void removeResidence(int userId) {
+        String sql = "DELETE FROM residence WHERE user_id = ?";
+        jdbc.update(sql, userId);
+    }
 }

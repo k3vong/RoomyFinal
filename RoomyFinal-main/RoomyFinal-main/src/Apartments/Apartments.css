@@ -59,6 +59,35 @@
 /* Apartment Card */
 .apartment-card {
   position: relative;
+  transition: all var(--transition-base);
+}
+
+.apartment-card.current-apartment {
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.creator-badge,
+.current-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-md);
+}
+
+.creator-badge {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.current-badge {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+  margin-right: var(--spacing-sm);
 }
 
 .apartment-card-header {
@@ -174,4 +203,56 @@
   .apartments-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Join Apartment Section */
+.join-apartment-card {
+  margin-bottom: var(--spacing-xl);
+}
+
+.join-instructions {
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.join-input-group {
+  width: 100%;
+}
+
+/* Current Apartment Display */
+.current-apartment-display {
+  margin-bottom: var(--spacing-xl);
+  background: var(--color-primary-light);
+  border: 2px solid var(--color-primary);
+}
+
+.apartment-id-display {
+  font-size: var(--font-size-xl);
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-md);
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.apartment-id-display strong {
+  color: var(--color-primary);
+}
+
+.share-instructions {
+  margin: var(--spacing-md) 0;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* Apartment Actions */
+.apartment-actions {
+  margin-top: var(--spacing-md);
 }

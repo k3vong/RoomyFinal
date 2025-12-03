@@ -46,7 +46,8 @@ CREATE TABLE apartments (
     complex_name VARCHAR(100) NOT NULL,
     room_number VARCHAR(20),
     rent_amount DECIMAL(10,2),
-    rent_due_day INT
+    rent_due_day INT,
+    created_by INT REFERENCES users(user_id)
 );
 
 -- Residence Table (connects Users ↔ Apartments)

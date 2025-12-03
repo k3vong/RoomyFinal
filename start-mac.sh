@@ -166,14 +166,15 @@ show_menu() {
     echo "  [8] 🔄 Restart Backend Container"
     echo "  [9] 🛑 Stop All Docker Services"
     echo "  [10] 🗑️  Reset Database (Delete All Data)"
-    echo "  [11] 📊 Show Service Status"
+    echo "  [11] 🔧 Run Database Migration"
+    echo "  [12] 📊 Show Service Status"
     echo ""
     echo -e "${CYAN}┌───────────────────────────────────────────────────────────┐${NC}"
     echo -e "${CYAN}│${NC}  ${BOLD}UTILITIES${NC}                                                ${CYAN}│${NC}"
     echo -e "${CYAN}└───────────────────────────────────────────────────────────┘${NC}"
-    echo "  [12] 📖 Open Documentation"
-    echo "  [13] 🔍 Check System Requirements"
-    echo "  [14] 🌐 Open App in Browser"
+    echo "  [13] 📖 Open Documentation"
+    echo "  [14] 🔍 Check System Requirements"
+    echo "  [15] 🌐 Open App in Browser"
     echo "  [0] 👋 Exit"
     echo ""
     read -p "  Enter your choice: " choice
@@ -528,6 +529,73 @@ reset_database() {
     press_any_key
 }
 
+run_migration() {
+    print_header
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC}  Running Database Migration...                           ${CYAN}║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    echo "  Checking Docker..."
+    if ! check_docker; then
+        press_any_key
+        return
+    fi
+    
+    cd "$BACKEND_DIR"
+    
+    # Check if migration.sql exists
+    if [ ! -f "migration.sql" ]; then
+        print_error "migration.sql not found!"
+        echo "  Expected location: $BACKEND_DIR/migration.sql"
+        press_any_key
+        return
+    fi
+    
+    print_info "Found migration.sql"
+    echo ""
+    echo "  This will:"
+    echo "    • Add created_by column to apartments table"
+    echo "    • Update existing data structure"
+    echo "    • Safe to run multiple times"
+    echo ""
+    read -p "  Continue? (y/n): " confirm
+    
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo ""
+        print_error "Migration cancelled."
+        sleep 2
+        return
+    fi
+    
+    echo ""
+    echo "  Executing migration..."
+    
+    # Try to run migration via Docker
+    if docker exec -i roomy-postgres psql -U roomy -d roomy < migration.sql 2>&1; then
+        echo ""
+        print_success "Migration completed successfully!"
+        echo ""
+        read -p "  Restart backend to apply changes? (y/n): " restart_choice
+        if [[ "$restart_choice" =~ ^[Yy]$ ]]; then
+            echo ""
+            echo "  Restarting backend..."
+            docker-compose restart backend
+            print_success "Backend restarted"
+        fi
+    else
+        echo ""
+        print_error "Migration failed!"
+        echo ""
+        echo "  Troubleshooting:"
+        echo "    • Check if PostgreSQL container is running"
+        echo "    • Verify database credentials"
+        echo "    • Review migration.sql syntax"
+    fi
+    
+    press_any_key
+}
+
 show_status() {
     print_header
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
@@ -690,22 +758,25 @@ open_in_browser() {
     echo ""
     echo "    [1] 🎨 Frontend (http://localhost:5173)"
     echo "    [2] ⚙️  Backend API (http://localhost:8080)"
-    echo "    [3] 📚 Backend Swagger Docs (http://localhost:8080/swagger-ui.html)"
-    echo "    [4] Back to Main Menu"
-    echo ""
-    read -p "  Select option: " urlchoice
-    
-    case $urlchoice in
-        1)
-            open_url "http://localhost:5173"
-            print_success "Opening frontend..."
-            ;;
-        2)
-            open_url "http://localhost:8080"
-            print_success "Opening backend API..."
-            ;;
-        3)
-            open_url "http://localhost:8080/swagger-ui.html"
+            10)
+                reset_database
+                ;;
+            11)
+                run_migration
+                ;;
+            12)
+                show_status
+                ;;
+            13)
+                show_docs
+                ;;
+            14)
+                check_requirements
+                ;;
+            15)
+                open_in_browser
+                ;;
+            0)en_url "http://localhost:8080/swagger-ui.html"
             print_success "Opening Swagger docs..."
             ;;
         4)

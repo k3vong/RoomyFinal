@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FaTrashCan, FaEdit } from 'react-icons/fa';
+import { ToastContext } from '../App';
+import { FaTrash, FaEdit } from 'react-icons/fa';
 import Navigation from '../components/Navigation';
 import PageLayout from '../components/PageLayout';
 import Card from '../components/Card';
@@ -14,6 +15,10 @@ export default function Apartments() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingApartment, setEditingApartment] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [joiningId, setJoiningId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [userApartmentId, setUserApartmentId] = useState(null);
   const [formData, setFormData] = useState({
     complexName: '',
     roomNumber: '',
@@ -22,20 +27,60 @@ export default function Apartments() {
   });
   
   const navigate = useNavigate();
+  const showToast = useContext(ToastContext);
   const user = JSON.parse(localStorage.getItem('user'));
 
+  // Redirect if not logged in
   useEffect(() => {
-    fetchApartments();
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  // Add error boundary for debugging
+  useEffect(() => {
+    console.log('Apartments component mounted');
+    console.log('User:', user);
+    console.log('showToast:', typeof showToast);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      // Fetch all apartments
+      const apartmentsResponse = await axios.get('http://localhost:8080/api/apartments');
+      setApartments(apartmentsResponse.data);
+
+      // Fetch user's current apartment if any
+      if (user?.userId) {
+        try {
+          const residenceResponse = await axios.get(`http://localhost:8080/api/residence/user/${user.userId}`);
+          if (residenceResponse.data && residenceResponse.data.apartmentId) {
+            setUserApartmentId(residenceResponse.data.apartmentId);
+          }
+        } catch (err) {
+          // User might not have an apartment yet, that's okay
+          console.log('User has no apartment yet');
+        }
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      if (showToast) showToast('Failed to load apartments', 'error');
+      setLoading(false);
+    }
+  };
 
   const fetchApartments = async () => {
     try {
       const response = await axios.get('http://localhost:8080/api/apartments');
       setApartments(response.data);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching apartments:', error);
-      setLoading(false);
+      showToast('Failed to refresh apartments', 'error');
     }
   };
 
@@ -48,6 +93,7 @@ export default function Apartments() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       if (editingApartment) {
         // Update existing apartment
@@ -57,24 +103,27 @@ export default function Apartments() {
           rentAmount: parseFloat(formData.rentAmount),
           rentDueDay: parseInt(formData.rentDueDay)
         });
-        alert('Apartment updated successfully!');
+        showToast('Apartment updated successfully!', 'success');
       } else {
         // Create new apartment
         await axios.post('http://localhost:8080/api/apartments', {
           complexName: formData.complexName,
           roomNumber: formData.roomNumber,
           rentAmount: parseFloat(formData.rentAmount),
-          rentDueDay: parseInt(formData.rentDueDay)
+          rentDueDay: parseInt(formData.rentDueDay),
+          createdBy: user.userId
         });
-        alert('Apartment created successfully!');
+        showToast('Apartment created successfully!', 'success');
       }
       setShowForm(false);
       setEditingApartment(null);
       setFormData({ complexName: '', roomNumber: '', rentAmount: '', rentDueDay: 1 });
-      fetchApartments();
+      await fetchApartments();
     } catch (error) {
       console.error('Error saving apartment:', error);
-      alert('Failed to save apartment');
+      showToast('Failed to save apartment', 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -96,22 +145,25 @@ export default function Apartments() {
     console.log('User ID:', user.userId);
     
     if (!user || !user.userId) {
-      alert('Error: User not logged in properly. Please login again.');
+      showToast('Error: User not logged in properly. Please login again.', 'error');
       navigate('/login');
       return;
     }
 
+    setJoiningId(apartmentId);
     try {
       const url = `http://localhost:8080/api/residence/join?userId=${user.userId}&apartmentId=${apartmentId}`;
       console.log('Joining apartment with URL:', url);
       
       await axios.post(url);
-      alert('Successfully joined apartment!');
+      showToast('Successfully joined apartment!', 'success');
       navigate('/dashboard');
     } catch (error) {
       console.error('Error joining apartment:', error);
       console.error('Error response:', error.response?.data);
-      alert(`Failed to join apartment: ${error.response?.data || error.message}`);
+      showToast(`Failed to join apartment: ${error.response?.data || error.message}`, 'error');
+    } finally {
+      setJoiningId(null);
     }
   };
 
@@ -122,13 +174,16 @@ export default function Apartments() {
       return;
     }
 
+    setDeletingId(apartmentId);
     try {
       await axios.delete(`http://localhost:8080/api/apartments/${apartmentId}`);
-      alert('Apartment deleted successfully!');
-      fetchApartments(); // Refresh list
+      showToast('Apartment deleted successfully!', 'success');
+      await fetchApartments(); // Refresh list
     } catch (error) {
       console.error('Error deleting apartment:', error);
-      alert('Failed to delete apartment');
+      showToast('Failed to delete apartment', 'error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -160,7 +215,6 @@ export default function Apartments() {
         actions={
           <Button 
             variant="primary"
-            onClick={() => navigate('/dashboard')}>
             onClick={() => navigate('/dashboard')}>
             ← Back to Dashboard
           </Button>
@@ -222,8 +276,8 @@ export default function Apartments() {
               </div>
 
               <div className="form-actions">
-                <Button type="submit" variant="primary">
-                  {editingApartment ? 'Update Apartment' : 'Create Apartment'}
+                <Button type="submit" variant="primary" disabled={submitting}>
+                  {submitting ? 'Saving...' : editingApartment ? 'Update Apartment' : 'Create Apartment'}
                 </Button>
                 <Button 
                   type="button" 
@@ -233,6 +287,7 @@ export default function Apartments() {
                     setEditingApartment(null);
                     setFormData({ complexName: '', roomNumber: '', rentAmount: '', rentDueDay: 1 });
                   }}
+                  disabled={submitting}
                 >
                   Cancel
                 </Button>
@@ -269,42 +324,67 @@ export default function Apartments() {
             </Card>
           ) : (
             <div className="apartments-grid">
-              {apartments.map((apt) => (
-                <Card key={apt.apartmentId} className="apartment-card" hover>
-                  <div className="apartment-card-header">
-                    <div className="apartment-icon-large">🏠</div>
-                    <div className="apartment-actions-top">
-                      <button 
-                        className="icon-btn edit-btn"
-                        onClick={(e) => handleEditApartment(apt, e)}
-                        title="Edit apartment"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button 
-                        className="icon-btn delete-btn"
-                        onClick={(e) => handleDeleteApartment(apt.apartmentId, e)}
-                        title="Delete apartment"
-                      >
-                        <FaTrashCan />
-                      </button>
+              {apartments.map((apt) => {
+                const isCreator = apt.createdBy === user?.userId;
+                const isUserApartment = apt.apartmentId === userApartmentId;
+                
+                return (
+                  <Card key={apt.apartmentId} className={`apartment-card ${isUserApartment ? 'current-apartment' : ''}`} hover>
+                    <div className="apartment-card-header">
+                      <div className="apartment-icon-large">🏠</div>
+                      {isCreator && (
+                        <div className="apartment-actions-top">
+                          <button 
+                            className="icon-btn edit-btn"
+                            onClick={(e) => handleEditApartment(apt, e)}
+                            title="Edit apartment"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button 
+                            className="icon-btn delete-btn"
+                            onClick={(e) => handleDeleteApartment(apt.apartmentId, e)}
+                            title="Delete apartment"
+                            disabled={deletingId === apt.apartmentId || joiningId === apt.apartmentId}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <h3 className="apartment-name">{apt.complexName}</h3>
-                  <div className="apartment-info">
-                    {apt.roomNumber && <p>📍 Room {apt.roomNumber}</p>}
-                    <p>💰 ${apt.rentAmount?.toFixed(2) || '0.00'}/month</p>
-                    <p>📅 Due day {apt.rentDueDay}</p>
-                  </div>
-                  <Button 
-                    onClick={() => handleJoinApartment(apt.apartmentId)}
-                    variant="primary"
-                    fullWidth
-                  >
-                    Join This Apartment
-                  </Button>
-                </Card>
-              ))}
+                    {isUserApartment && (
+                      <div className="current-badge">Current Apartment</div>
+                    )}
+                    {isCreator && (
+                      <div className="creator-badge">Created by You</div>
+                    )}
+                    <h3 className="apartment-name">{apt.complexName}</h3>
+                    <div className="apartment-info">
+                      {apt.roomNumber && <p>📍 Room {apt.roomNumber}</p>}
+                      <p>💰 ${apt.rentAmount?.toFixed(2) || '0.00'}/month</p>
+                      <p>📅 Due day {apt.rentDueDay}</p>
+                    </div>
+                    {!isUserApartment ? (
+                      <Button 
+                        onClick={() => handleJoinApartment(apt.apartmentId)}
+                        variant="primary"
+                        fullWidth
+                        disabled={joiningId === apt.apartmentId || deletingId === apt.apartmentId}
+                      >
+                        {joiningId === apt.apartmentId ? 'Joining...' : 'Join This Apartment'}
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="secondary"
+                        fullWidth
+                        disabled
+                      >
+                        ✓ Your Current Apartment
+                      </Button>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

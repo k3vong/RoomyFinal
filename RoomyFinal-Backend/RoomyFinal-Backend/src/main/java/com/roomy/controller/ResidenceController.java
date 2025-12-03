@@ -33,4 +33,10 @@ public class ResidenceController {
     public Integer getUserApartment(@PathVariable int userId) {
         return repo.getApartmentByUser(userId);
     }
+
+    // Leave apartment
+    @DeleteMapping("/leave/{userId}")
+    public void leaveApartment(@PathVariable int userId) {
+        repo.removeResidence(userId);
+    }
 }

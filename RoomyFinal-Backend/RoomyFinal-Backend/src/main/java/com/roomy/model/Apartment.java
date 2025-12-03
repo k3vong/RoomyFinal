@@ -8,6 +8,7 @@ public class Apartment {
     private String roomNumber;
     private BigDecimal rentAmount;
     private int rentDueDay;
+    private Integer createdBy;
 
     public Apartment() {}
 
@@ -17,6 +18,15 @@ public class Apartment {
         this.roomNumber = roomNumber;
         this.rentAmount = rentAmount;
         this.rentDueDay = rentDueDay;
+    }
+
+    public Apartment(int apartmentId, String complexName, String roomNumber, BigDecimal rentAmount, int rentDueDay, Integer createdBy) {
+        this.apartmentId = apartmentId;
+        this.complexName = complexName;
+        this.roomNumber = roomNumber;
+        this.rentAmount = rentAmount;
+        this.rentDueDay = rentDueDay;
+        this.createdBy = createdBy;
     }
 
     public int getApartmentId() {
@@ -59,6 +69,14 @@ public class Apartment {
         this.rentDueDay = rentDueDay;
     }
 
+    public Integer getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(Integer createdBy) {
+        this.createdBy = createdBy;
+    }
+
     @Override
     public String toString() {
         return "Apartment{" +
@@ -67,6 +85,7 @@ public class Apartment {
                 ", roomNumber='" + roomNumber + '\'' +
                 ", rentAmount=" + rentAmount +
                 ", rentDueDay=" + rentDueDay +
+                ", createdBy=" + createdBy +
                 '}';
     }
 }

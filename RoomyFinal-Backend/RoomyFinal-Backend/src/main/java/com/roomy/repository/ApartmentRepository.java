@@ -18,8 +18,8 @@ public class ApartmentRepository {
     //  Add a new apartment
     public int addApartment(Apartment apartment) {
         String sql = """
-            INSERT INTO apartments (complex_name, room_number, rent_amount, rent_due_day)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO apartments (complex_name, room_number, rent_amount, rent_due_day, created_by)
+            VALUES (?, ?, ?, ?, ?)
             RETURNING apartment_id
         """;
 
@@ -27,7 +27,8 @@ public class ApartmentRepository {
                 apartment.getComplexName(),
                 apartment.getRoomNumber(),
                 apartment.getRentAmount(),
-                apartment.getRentDueDay());
+                apartment.getRentDueDay(),
+                apartment.getCreatedBy());
         
         if (result == null) {
             throw new RuntimeException("Failed to create apartment");
@@ -45,6 +46,7 @@ public class ApartmentRepository {
             apt.setRoomNumber(rs.getString("room_number"));
             apt.setRentAmount(rs.getBigDecimal("rent_amount"));
             apt.setRentDueDay(rs.getInt("rent_due_day"));
+            apt.setCreatedBy((Integer) rs.getObject("created_by"));
             return apt;
         });
     }
@@ -59,6 +61,7 @@ public class ApartmentRepository {
             apt.setRoomNumber(rs.getString("room_number"));
             apt.setRentAmount(rs.getBigDecimal("rent_amount"));
             apt.setRentDueDay(rs.getInt("rent_due_day"));
+            apt.setCreatedBy((Integer) rs.getObject("created_by"));
             return apt;
         }, id);
 
@@ -78,6 +81,21 @@ public class ApartmentRepository {
                 apartment.getRentAmount(),
                 apartment.getRentDueDay(),
                 apartment.getApartmentId());
+    }
+
+    //  Get apartments created by a specific user
+    public List<Apartment> getApartmentsByCreator(int userId) {
+        String sql = "SELECT * FROM apartments WHERE created_by = ?";
+        return jdbc.query(sql, (rs, rowNum) -> {
+            Apartment apt = new Apartment();
+            apt.setApartmentId(rs.getInt("apartment_id"));
+            apt.setComplexName(rs.getString("complex_name"));
+            apt.setRoomNumber(rs.getString("room_number"));
+            apt.setRentAmount(rs.getBigDecimal("rent_amount"));
+            apt.setRentDueDay(rs.getInt("rent_due_day"));
+            apt.setCreatedBy((Integer) rs.getObject("created_by"));
+            return apt;
+        }, userId);
     }
 
     //  Delete apartment

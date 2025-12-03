@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ToastContext } from '../App';
+import { FaTimes } from 'react-icons/fa';
 import Navigation from '../components/Navigation';
 import PageLayout from '../components/PageLayout';
 import Card from '../components/Card';
@@ -23,8 +25,45 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [createdApartments, setCreatedApartments] = useState([]);
+  const [currentApartment, setCurrentApartment] = useState(null);
+  const [loadingApartments, setLoadingApartments] = useState(true);
   
   const navigate = useNavigate();
+  const showToast = useContext(ToastContext);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchApartmentData();
+  }, []);
+
+  const fetchApartmentData = async () => {
+    setLoadingApartments(true);
+    try {
+      // Fetch apartments created by this user
+      const createdResponse = await axios.get(`http://localhost:8080/api/apartments/creator/${user.userId}`);
+      setCreatedApartments(createdResponse.data || []);
+
+      // Fetch user's current apartment
+      try {
+        const apartmentIdResponse = await axios.get(`http://localhost:8080/api/residence/user/${user.userId}`);
+        if (apartmentIdResponse.data) {
+          const apartmentResponse = await axios.get(`http://localhost:8080/api/apartments/${apartmentIdResponse.data}`);
+          setCurrentApartment(apartmentResponse.data);
+        }
+      } catch (err) {
+        console.log('User has no current apartment');
+      }
+    } catch (error) {
+      console.error('Error fetching apartment data:', error);
+      showToast('Failed to load apartment information');
+    } finally {
+      setLoadingApartments(false);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -72,10 +111,10 @@ export default function Profile() {
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
 
-      alert('Profile updated successfully!');
+      showToast('Profile updated successfully!', 'success');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      showToast('Failed to update profile', 'error');
     } finally {
       setSaving(false);
     }
@@ -83,18 +122,49 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') {
-      alert('Please type DELETE to confirm');
+      showToast('Please type DELETE to confirm', 'warning');
       return;
     }
 
     try {
       await axios.delete(`http://localhost:8080/api/users/${user.userId}`);
       localStorage.removeItem('user');
-      alert('Account deleted successfully');
+      showToast('Account deleted successfully', 'success');
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
-      alert('Failed to delete account');
+      showToast('Failed to delete account', 'error');
+    }
+  };
+
+  const handleDeleteApartment = async (apartmentId) => {
+    if (!window.confirm('Delete this apartment? All associated data will be removed. This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`http://localhost:8080/api/apartments/${apartmentId}`);
+      showToast('Apartment deleted successfully!');
+      await fetchApartmentData();
+    } catch (error) {
+      console.error('Error deleting apartment:', error);
+      showToast('Failed to delete apartment');
+    }
+  };
+
+  const handleLeaveApartment = async () => {
+    if (!window.confirm('Leave your current apartment? You will need to join another apartment to access shared features.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`http://localhost:8080/api/residence/leave/${user.userId}`);
+      showToast('You have left the apartment');
+      setCurrentApartment(null);
+      await fetchApartmentData();
+    } catch (error) {
+      console.error('Error leaving apartment:', error);
+      showToast('Failed to leave apartment');
     }
   };
 
@@ -238,6 +308,73 @@ export default function Profile() {
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </form>
+          </Card>
+
+          {/* Current Apartment Section */}
+          <Card title="Current Apartment">
+            {loadingApartments ? (
+              <p>Loading apartment information...</p>
+            ) : currentApartment ? (
+              <div className="current-apartment-info">
+                <div className="apartment-details">
+                  <h3>{currentApartment.complexName}</h3>
+                  {currentApartment.roomNumber && <p>Room: {currentApartment.roomNumber}</p>}
+                  <p>Rent: ${currentApartment.rentAmount?.toFixed(2)}/month</p>
+                  <p>Due: Day {currentApartment.rentDueDay} of each month</p>
+                </div>
+                <Button 
+                  variant="danger" 
+                  onClick={handleLeaveApartment}
+                >
+                  Leave Apartment
+                </Button>
+              </div>
+            ) : (
+              <div className="no-apartment">
+                <p>You are not currently in an apartment.</p>
+                <Button 
+                  variant="primary" 
+                  onClick={() => navigate('/apartments')}
+                >
+                  Find an Apartment
+                </Button>
+              </div>
+            )}
+          </Card>
+
+          {/* Created Apartments Section */}
+          <Card title="Apartments You Created">
+            {loadingApartments ? (
+              <p>Loading your apartments...</p>
+            ) : createdApartments.length > 0 ? (
+              <div className="created-apartments-list">
+                {createdApartments.map((apt) => (
+                  <div key={apt.apartmentId} className="created-apartment-item">
+                    <div className="apartment-info">
+                      <h4>{apt.complexName}</h4>
+                      {apt.roomNumber && <span className="room-number">Room {apt.roomNumber}</span>}
+                    </div>
+                    <button 
+                      className="delete-apartment-btn"
+                      onClick={() => handleDeleteApartment(apt.apartmentId)}
+                      title="Delete apartment"
+                    >
+                      <FaTimes />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-apartments-created">
+                <p>You haven't created any apartments yet.</p>
+                <Button 
+                  variant="primary" 
+                  onClick={() => navigate('/apartments')}
+                >
+                  Create an Apartment
+                </Button>
+              </div>
+            )}
           </Card>
 
           {/* Danger Zone */}
