@@ -107,18 +107,23 @@ show_menu() {
     echo "  [7] 📦 Build All (Backend + Frontend)"
     echo ""
     echo -e "${CYAN}┌───────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}  ${BOLD}TESTING${NC}                                                  ${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────┘${NC}"
+    echo "  [8] 🧪 Run All Tests (45 Unit Tests)"
+    echo ""
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────┐${NC}"
     echo -e "${CYAN}│${NC}  ${BOLD}MANAGEMENT${NC}                                               ${CYAN}│${NC}"
     echo -e "${CYAN}└───────────────────────────────────────────────────────────┘${NC}"
-    echo "  [8] 🔄 Restart Backend Container"
-    echo "  [9] 🛑 Stop All Docker Services"
-    echo "  [10] 🗑️  Reset Database (Delete All Data)"
-    echo "  [11] 🔧 Run Database Migration"
-    echo "  [12] 📊 Show Service Status"
+    echo "  [9] 🔄 Restart Backend Container"
+    echo "  [10] 🛑 Stop All Docker Services"
+    echo "  [11] 🗑️  Reset Database (Delete All Data)"
+    echo "  [12] 🔧 Run Database Migration"
+    echo "  [13] 📊 Show Service Status"
     echo ""
     echo -e "${CYAN}┌───────────────────────────────────────────────────────────┐${NC}"
     echo -e "${CYAN}│${NC}  ${BOLD}UTILITIES${NC}                                                ${CYAN}│${NC}"
     echo -e "${CYAN}└───────────────────────────────────────────────────────────┘${NC}"
-    echo "  [13] 📖 Open Documentation"
+    echo "  [14] 📖 Open Documentation"
     echo "  [0] 👋 Exit"
     echo ""
     read -p "  Enter your choice: " choice
@@ -345,6 +350,49 @@ build_all() {
     echo ""
     echo "  📦 Backend:  target/roomy-backend-1.0.0.jar"
     echo "  📦 Frontend: dist/"
+    press_any_key
+}
+
+#=========================================
+#  TESTING OPTIONS
+#=========================================
+
+run_tests() {
+    print_header
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC}  Running All Unit Tests (45 Tests)...                     ${CYAN}║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo "  Test Suite:"
+    echo "  - CalculatorService Tests: 10 tests"
+    echo "  - UserController Tests: 6 tests"
+    echo "  - ApartmentController Tests: 2 tests"
+    echo "  - ChoreController Tests: 5 tests"
+    echo "  - GroceryController Tests: 4 tests"
+    echo "  - ResidenceController Tests: 4 tests"
+    echo "  - Model Tests: 2 tests"
+    echo "  - ApartmentRepository Tests: 4 tests"
+    echo "  - Integration Tests: 7 tests"
+    echo "  - Application Context Test: 1 test"
+    echo ""
+    print_info "Starting test execution..."
+    echo ""
+    
+    cd "$BACKEND_DIR"
+    ./mvnw test
+    
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo -e "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${CYAN}║${NC}  ${GREEN}✅ All 45 tests passed!${NC}                                   ${CYAN}║${NC}"
+        echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
+    else
+        echo ""
+        echo -e "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${CYAN}║${NC}  ${RED}❌ Some tests failed!${NC}                                     ${CYAN}║${NC}"
+        echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
+    fi
+    
     press_any_key
 }
 
@@ -640,21 +688,24 @@ main() {
                 build_all
                 ;;
             8)
-                restart_backend
+                run_tests
                 ;;
             9)
-                stop_docker
+                restart_backend
                 ;;
             10)
-                reset_database
+                stop_docker
                 ;;
             11)
-                run_migration
+                reset_database
                 ;;
             12)
-                show_status
+                run_migration
                 ;;
             13)
+                show_status
+                ;;
+            14)
                 show_docs
                 ;;
             0)

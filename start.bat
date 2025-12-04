@@ -31,17 +31,21 @@ echo    [5] Build Backend (Maven Package)
 echo    [6] Build Frontend (Vite Production Build)
 echo    [7] Build All (Backend + Frontend)
 echo.
+echo  TESTING
+echo  ------------------------------------------------------------
+echo    [8] Run All Tests (45 Unit Tests)
+echo.
 echo  MANAGEMENT
 echo  ------------------------------------------------------------
-echo    [8] Restart Backend Container
-echo    [9] Stop All Docker Services
-echo    [10] Reset Database (Delete All Data)
-echo    [11] Run Database Migration (Keep Data)
-echo    [12] Show Service Status
+echo    [9] Restart Backend Container
+echo    [10] Stop All Docker Services
+echo    [11] Reset Database (Delete All Data)
+echo    [12] Run Database Migration (Keep Data)
+echo    [13] Show Service Status
 echo.
 echo  UTILITIES
 echo  ------------------------------------------------------------
-echo    [13] Open Documentation
+echo    [14] Open Documentation
 echo    [0] Exit
 echo.
 echo  ============================================================
@@ -55,12 +59,13 @@ if "%choice%"=="4" goto backend_local
 if "%choice%"=="5" goto build_backend
 if "%choice%"=="6" goto build_frontend
 if "%choice%"=="7" goto build_all
-if "%choice%"=="8" goto restart_backend
-if "%choice%"=="9" goto stop_docker
-if "%choice%"=="10" goto reset_database
-if "%choice%"=="11" goto run_migration
-if "%choice%"=="12" goto status
-if "%choice%"=="13" goto docs
+if "%choice%"=="8" goto run_tests
+if "%choice%"=="9" goto restart_backend
+if "%choice%"=="10" goto stop_docker
+if "%choice%"=="11" goto reset_database
+if "%choice%"=="12" goto run_migration
+if "%choice%"=="13" goto status
+if "%choice%"=="14" goto docs
 if "%choice%"=="0" goto end
 
 echo.
@@ -296,6 +301,52 @@ echo.
 echo  Backend:  target\roomy-backend-1.0.0.jar
 echo  Frontend: dist\
 echo.
+pause
+goto menu
+
+REM =========================================
+REM  TESTING OPTIONS
+REM =========================================
+
+:run_tests
+cls
+echo.
+echo  ============================================================
+echo   Running All Unit Tests (45 Tests)
+echo  ============================================================
+echo.
+echo  Test Suite:
+echo  - CalculatorService Tests: 10 tests
+echo  - UserController Tests: 6 tests
+echo  - ApartmentController Tests: 2 tests
+echo  - ChoreController Tests: 5 tests
+echo  - GroceryController Tests: 4 tests
+echo  - ResidenceController Tests: 4 tests
+echo  - Model Tests: 2 tests
+echo  - ApartmentRepository Tests: 4 tests
+echo  - Integration Tests: 7 tests
+echo  - Application Context Test: 1 test
+echo.
+echo  ------------------------------------------------------------
+echo.
+
+cd /d "c:\roomyproject\RoomyFinal-Backend\RoomyFinal-Backend"
+call mvnw.cmd test
+
+if errorlevel 1 (
+    echo.
+    echo  ============================================================
+    echo   [ERROR] Some tests failed!
+    echo  ============================================================
+    echo.
+) else (
+    echo.
+    echo  ============================================================
+    echo   [SUCCESS] All 45 tests passed!
+    echo  ============================================================
+    echo.
+)
+
 pause
 goto menu
 

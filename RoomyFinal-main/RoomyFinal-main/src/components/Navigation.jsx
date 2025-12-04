@@ -73,6 +73,13 @@ const Navigation = ({
             >
               Groceries
             </button>
+            <button 
+              className="nav-link"
+              onClick={() => navigate('/calculator')}
+              aria-label="Go to Calculator"
+            >
+              Calculator
+            </button>
             <div className="nav-divider"></div>
             <button 
               className="nav-link nav-link-secondary"
